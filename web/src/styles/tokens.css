@@ -1,0 +1,22 @@
+:root {
+  font-family: "Bahnschrift", "Aptos", "Segoe UI", sans-serif;
+  color: #1b2420;
+  background: #e6e7df;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  --canvas: #ecece4;
+  --panel: #f8f8f2;
+  --panel-strong: #ffffff;
+  --ink: #1b2420;
+  --muted: #6c7670;
+  --faint: #9aa39b;
+  --line: #d4d8cf;
+  --line-strong: #bfc8bc;
+  --lime: #bdd26d;
+  --lime-dark: #5a6d2c;
+  --blue: #397ca3;
+  --coral: #db7259;
+  --amber: #c08a3e;
+  --shadow: 0 16px 38px rgba(40, 52, 44, 0.08);
+}
