@@ -5,13 +5,15 @@
 html,
 body,
 #root {
+  width: 100%;
+  height: 100%;
   min-width: 320px;
-  min-height: 100%;
+  min-height: 0;
   margin: 0;
 }
 
 body {
-  min-height: 100vh;
+  overflow: hidden;
   background-color: var(--canvas);
   background-image:
     linear-gradient(rgba(76, 94, 80, 0.035) 1px, transparent 1px),
@@ -40,13 +42,17 @@ code,
 
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
   color: var(--ink);
 }
 
 .activity-rail {
   display: flex;
   width: 72px;
+  height: 100%;
   flex: 0 0 72px;
   flex-direction: column;
   align-items: center;
@@ -102,17 +108,21 @@ code,
 
 .workbench {
   display: flex;
+  height: 100%;
   min-width: 0;
+  min-height: 0;
   flex: 1;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .topbar {
   display: flex;
-  min-height: 86px;
+  min-height: clamp(68px, 9vh, 86px);
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
-  padding: 18px clamp(24px, 4vw, 64px);
+  padding: clamp(12px, 1.8vh, 18px) clamp(24px, 4vw, 64px);
   background: rgba(248, 248, 242, 0.82);
   border-bottom: 1px solid var(--line);
 }
@@ -159,17 +169,23 @@ code,
 }
 
 .content {
+  display: flex;
   width: min(1440px, 100%);
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
   margin: 0 auto;
-  padding: 0 clamp(24px, 4vw, 64px) 42px;
+  padding: 0 clamp(24px, 4vw, 64px) clamp(16px, 2vh, 42px);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .intro-band {
   display: flex;
-  min-height: 190px;
+  min-height: clamp(136px, 18vh, 190px);
   align-items: end;
   justify-content: space-between;
-  padding: 42px 0 34px;
+  padding: clamp(22px, 3.5vh, 42px) 0 clamp(18px, 2.8vh, 34px);
   border-bottom: 1px solid var(--line-strong);
 }
 
@@ -206,13 +222,16 @@ code,
 .workspace-grid {
   display: grid;
   grid-template-columns: minmax(250px, 0.78fr) minmax(360px, 1.22fr);
-  gap: 18px;
-  margin-top: 18px;
+  column-gap: 18px;
+  row-gap: clamp(12px, 2vh, 18px);
+  min-height: 0;
+  flex: 0 0 auto;
+  margin-top: clamp(12px, 2vh, 18px);
 }
 
 .panel {
   min-width: 0;
-  padding: 24px;
+  padding: clamp(16px, 1.5vw, 24px);
   background: rgba(248, 248, 242, 0.88);
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
@@ -242,7 +261,7 @@ code,
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 36px;
+  margin-top: clamp(18px, 3vh, 36px);
   padding: 13px 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
@@ -283,7 +302,7 @@ code,
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 26px;
+  margin-top: clamp(14px, 2.2vh, 26px);
 }
 
 .primary-button,
@@ -342,7 +361,7 @@ code,
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  margin-top: 34px;
+  margin-top: clamp(18px, 3vh, 34px);
   color: var(--muted);
   font-size: 11px;
 }
@@ -355,7 +374,7 @@ code,
 
 .job-panel {
   display: flex;
-  min-height: 300px;
+  min-height: clamp(230px, 28vh, 300px);
   flex-direction: column;
 }
 
@@ -455,13 +474,17 @@ code,
 }
 
 .events-panel {
-  margin-top: 18px;
+  display: flex;
+  min-height: clamp(170px, 22vh, 260px);
+  flex: 1 1 0;
+  flex-direction: column;
+  margin-top: clamp(10px, 1.5vh, 18px);
   padding-bottom: 10px;
 }
 
 .events-heading {
   align-items: center;
-  padding-bottom: 18px;
+  padding-bottom: clamp(10px, 1.8vh, 18px);
   border-bottom: 1px solid var(--line);
 }
 
@@ -476,14 +499,16 @@ code,
 }
 
 .event-list {
-  max-height: 310px;
+  min-height: 0;
+  flex: 1 1 auto;
+  max-height: none;
   overflow: auto;
 }
 
 .event-row {
   display: grid;
   grid-template-columns: 34px 24px minmax(80px, 0.3fr) minmax(120px, 1fr) 46px 74px;
-  min-height: 45px;
+  min-height: clamp(36px, 4.5vh, 45px);
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid rgba(212, 216, 207, 0.72);
@@ -543,6 +568,7 @@ code,
 .statusbar {
   display: flex;
   min-height: 34px;
+  flex: 0 0 34px;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
