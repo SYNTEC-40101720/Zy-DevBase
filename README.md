@@ -1,108 +1,130 @@
-# Python Web Desktop Platform Template
+# Platform Template
 
-这是开发体系的隔离试验场，不参与当前发票系统的运行和打包。
+Windows 本地桌面工具的基础项目骨架。复制即可开新工具，不用从零搭起。
 
-## 当前边界
+## 技术栈
 
-- 现有发票项目仍位于仓库根目录，作为参考实现，不在这里直接重构。
-- 新工具默认采用 Python + FastAPI + React/TypeScript，并以 pywebview/WebView2 作为 Windows 桌面壳；浏览器模式只用于开发调试。
-- 默认适配离线、受限 Windows 环境，不依赖 Redis、Celery 或外部数据库服务。
-- 每个工具独立发布；后续通过稳定契约和公共包接入统一工作台。
-- 任务状态默认驻留内存，窗口关闭行为由具体工具配置。
+- **后端**：Python 3.12 + FastAPI + Pydantic + Uvicorn
+- **前端**：React 19 + TypeScript + Vite 6
+- **桌面壳**：pywebview / WebView2（Windows）
+- **测试**：pytest + httpx（后端）、tsc（前端）
 
-## 当前模板结构
+默认适配离线、受限 Windows 环境，不依赖 Redis、Celery 或外部数据库服务。任务状态默认驻留内存。
+
+## 目录结构
 
 ```text
 platform_template/
-├─ main.py              # 模板根目录后端启动入口
+├─ main.py                 # 启动入口：桌面 / 浏览器双模式
 ├─ backend/
 │  ├─ pyproject.toml
 │  ├─ platform_runtime/
-│  │  ├─ domain/          # 任务和事件模型
-│  │  ├─ application/     # 内存运行时、事件总线、生命周期策略
-│  │  ├─ api/             # /api/v1 HTTP 与 WebSocket
-│  │  └─ desktop/         # 可选 pywebview/WebView2 适配
-│  └─ tests/              # 运行时和 API 窄测试
+│  │  ├─ domain/           # 任务状态机、领域事件（零 web 依赖）
+│  │  ├─ application/       # 内存运行时、事件总线、生命周期策略
+│  │  ├─ api/              # /api/v1 HTTP 与 WebSocket
+│  │  └─ desktop/          # pywebview / WebView2 桌面适配
+│  └─ tests/               # 运行时、API、桌面适配测试
 └─ web/
-	├─ package.json
-	├─ package-lock.json
-	├─ vite.config.ts
-	└─ src/                 # React/TypeScript 最小工作台
+   ├─ package.json
+   ├─ vite.config.ts
+   └─ src/                  # React / TypeScript 工作台
 ```
 
-后端包名是 `platform_runtime`，不复用仓库根目录的 `src`。演示任务只允许一个非终态任务并使用线程和内存状态；进度事件可合并，关键生命周期事件会优先保留在重放窗口内。桌面模式默认通过 `WindowLifecycle` 使用 `stop_on_close`，窗口关闭时取消活动任务并退出本地服务；浏览器调试模式不负责桌面窗口生命周期。
+### 后端分层
 
-事件重放历史默认保留最近 512 个事件，历史超出范围后以当前任务快照作为恢复依据；需要完整审计记录的工具应另行接入持久化适配器。
+| 层 | 职责 | 依赖 |
+| --- | --- | --- |
+| `domain` | 任务状态机、领域事件值对象 | 无框架依赖 |
+| `application` | 内存运行时、事件总线、窗口生命周期 | 仅依赖 `domain` |
+| `api` | FastAPI 工厂、路由、Pydantic 契约 | 依赖 `application` |
+| `desktop` | pywebview 窗口、本地服务托管 | 依赖 `api` |
+
+业务核心在 `domain` 和 `application`，不绑定 FastAPI 或 pywebview，可独立单元测试。换新业务时只改这两层，`api` / `desktop` / 前端骨架不动。
 
 ## 本地开发
 
-后端需要 Python 3.12，前端需要 Node.js 18+。PowerShell 中从模板目录执行：
+### 后端
+
+需要 Python 3.12。PowerShell 从模板根目录执行：
 
 ```powershell
 cd backend
 py -3.12 -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -e ".[test,desktop]"
-python -m pytest
+python -m pytest -q
 ```
 
-如果只运行 API 测试、不启动桌面窗口，可以只安装测试依赖：
+只跑 API 测试、不启动桌面窗口时，可只装测试依赖：
 
 ```powershell
 python -m pip install -e ".[test]"
 ```
 
-目标 Windows 环境需要安装 WebView2 Runtime。
+### 前端
 
-先构建前端，再从模板根目录启动默认的独立桌面界面：
+需要 Node.js 18+：
 
 ```powershell
-cd ..
 cd web
 npm ci
 npm run typecheck
 npm run build
-cd ..
+```
+
+### 启动
+
+先构建前端，再从模板根目录启动：
+
+```powershell
 python main.py
 ```
 
-`main.py` 默认使用 pywebview/WebView2 托管 `web/dist`，服务就绪后打开独立工具窗口。`python main.py --desktop` 是显式的等价写法。可以继续使用 `--host`、`--port`，或通过 `PLATFORM_HOST`、`PLATFORM_PORT` 设置默认监听地址。若缺少 `web/dist/index.html`，入口会提示先在 `web` 执行 `npm ci` 和 `npm run build`。
+`main.py` 默认用 pywebview / WebView2 托管 `web/dist`，服务就绪后打开独立桌面窗口。`python main.py --desktop` 是显式等价写法。支持 `--host`、`--port`，或通过 `PLATFORM_HOST`、`PLATFORM_PORT` 设置默认监听地址。缺少 `web/dist/index.html` 时会提示先构建前端。
 
-浏览器模式只用于开发调试：
+浏览器调试模式：
 
 ```powershell
 python main.py --browser
-python main.py --browser --reload
+python main.py --browser --reload     # 热更新，仅限浏览器模式
+python main.py --browser --no-browser  # 不自动开浏览器
 ```
 
-`--reload` 只能和 `--browser` 一起使用；`--no-browser` 只在浏览器模式下阻止自动打开外部浏览器：
-
-```powershell
-python main.py --browser --no-browser
-```
-
-桌面模式不会打开外部浏览器；即使传入 `--no-browser` 也不影响 WebView 窗口。当前是源码运行的独立窗口，不代表已经完成 PyInstaller EXE 打包。
-
-需要前端热更新时，另开终端启动 Vite 开发服务器：
+前端热更新时另开终端：
 
 ```powershell
 cd web
 npm run dev
 ```
 
-Vite 开发服务器默认在 `http://127.0.0.1:5173`，会把 `/api` 和 WebSocket 请求代理到 `127.0.0.1:8000`。也可以使用 `VITE_API_BASE_URL` 和 `VITE_WS_URL` 指向其他本地服务。
+Vite 开发服务器默认在 `http://localhost:5173`，会把 `/api` 和 WebSocket 请求代理到 `localhost:8000`。也可用 `VITE_API_BASE_URL` 和 `VITE_WS_URL` 指向其他本地服务。
 
-## 有意留下的边界
+## API
 
-- 这里没有数据库、Redis、Celery 或其他外部服务。
-- 这里没有业务模块，演示任务只用于验证生命周期和事件契约。
-- 桌面模式已提供 pywebview/WebView2 适配，但没有实现 Native Bridge，也没有完成 PyInstaller EXE 打包；当前只是源码运行的独立窗口。适配新业务工具时，只需替换业务模块、传入窗口标题和尺寸，并按需增加 Native Bridge，不要复制仓库根目录的发票业务代码。
-- 初始化阶段不抽取公共包。等多个独立工具验证契约稳定后，再整体剪切模板并沉淀共享能力。
+后端 API 前缀 `/api/v1`：
 
-## 迭代顺序
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/health` | 健康检查 |
+| GET | `/jobs/current` | 当前任务快照 |
+| POST | `/jobs/start` | 启动演示任务 |
+| POST | `/jobs/cancel` | 取消当前任务 |
+| WS | `/events` | 事件流（含重放） |
 
-1. 从当前项目提取最小通用骨架。
-2. 抽象任务执行、事件总线、生命周期和桌面桥接接口。
-3. 加入一个不含发票业务的示例工具。
-4. 建立 Python、Web、桌面打包和验收测试。
-5. 稳定后整体剪切到独立仓库。
+运行时只允许一个非终态任务。演示任务通过后台线程执行，支持完成、取消、冲突检测和失败状态。事件总线合并相邻的同任务进度事件，重放历史默认最多 512 个事件；重连时以当前任务快照为权威状态。
+
+## 扩展新工具
+
+1. 替换 `domain/` 和 `application/` 里的业务逻辑（任务、事件、状态机）
+2. 在 `api/routes/` 增改路由，在 `api/schemas.py` 调整响应模型
+3. 改 `web/src/app/App.tsx` 的工作台界面
+4. 调 `main.py` 和 `desktop/launcher.py` 的窗口标题、尺寸
+5. 不动 `event_bus` / `desktop` 骨架，除非确有需要
+
+## 边界
+
+- 无数据库、Redis、Celery 或其他外部服务
+- 无业务模块，演示任务只验证运行时契约
+- 已提供 pywebview / WebView2 桌面壳，未实现 Native Bridge 和 PyInstaller EXE 打包
+- 无账号、权限和局域网安全边界，当前只面向本机开发服务
+- 任务状态默认不持久化，进程重启后丢失
