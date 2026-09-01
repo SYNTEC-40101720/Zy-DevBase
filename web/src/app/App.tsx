@@ -6,11 +6,13 @@ import {
   CircleAlert,
   CircleDot,
   FileClock,
+  Loader,
   Play,
   RotateCw,
   Square,
   Wifi,
   WifiOff,
+  X,
 } from "lucide-react";
 
 import {
@@ -217,7 +219,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <aside className="activity-rail" aria-label="工具栏">
-        <div className="rail-mark">PR</div>
+        <div className="rail-mark">P</div>
         <nav className="rail-nav" aria-label="工作台视图">
           <button className="rail-button is-selected" type="button" title="运行概览" aria-label="运行概览">
             <Activity size={19} strokeWidth={1.8} />
@@ -367,7 +369,15 @@ export default function App() {
                   <div className={`event-row ${event.kind === "progress" ? "is-progress" : "is-key"}`} key={event.event_id}>
                     <span className="event-sequence">{String(event.sequence).padStart(3, "0")}</span>
                     <span className="event-icon">
-                      {event.kind === "job_completed" ? <Check size={14} /> : event.kind === "job_cancelled" ? <Square size={12} /> : <CircleDot size={12} />}
+                      {event.kind === "job_completed"
+                        ? <Check size={13} />
+                        : event.kind === "job_cancelled"
+                          ? <X size={12} />
+                          : event.kind === "job_failed"
+                            ? <CircleAlert size={12} />
+                            : event.kind === "job_started"
+                              ? <Play size={11} fill="currentColor" />
+                              : <CircleDot size={11} />}
                     </span>
                     <span className="event-name">{EVENT_LABELS[event.kind]}</span>
                     <span className="event-message">{event.message}</span>

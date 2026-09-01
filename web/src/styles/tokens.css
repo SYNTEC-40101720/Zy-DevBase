@@ -1,22 +1,46 @@
 :root {
-  font-family: "Bahnschrift", "Aptos", "Segoe UI", sans-serif;
-  color: #1b2420;
-  background: #e6e7df;
+  font-family: "Inter", -apple-system, "Segoe UI", "Noto Sans SC", sans-serif;
+  color: var(--ink);
+  background: var(--canvas);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 
-  --canvas: #ecece4;
-  --panel: #f8f8f2;
-  --panel-strong: #ffffff;
-  --ink: #1b2420;
-  --muted: #6c7670;
-  --faint: #9aa39b;
-  --line: #d4d8cf;
-  --line-strong: #bfc8bc;
-  --lime: #bdd26d;
-  --lime-dark: #5a6d2c;
-  --blue: #397ca3;
-  --coral: #db7259;
-  --amber: #c08a3e;
-  --shadow: 0 16px 38px rgba(40, 52, 44, 0.08);
+  /* 暖纸色画布 */
+  --canvas: #f0eee6;
+  --surface: #faf9f5;
+  --surface-raised: #ffffff;
+  --surface-sunken: #ebe8df;
+
+  /* 文字 */
+  --ink: #2d2a26;
+  --ink-soft: #555049;
+  --muted: #8b8680;
+  --faint: #b5b0a8;
+
+  /* 线条 */
+  --line: #e0ddd2;
+  --line-strong: #d0ccbe;
+
+  /* Claude 珊瑚橙 */
+  --accent: #d97757;
+  --accent-hover: #c4663f;
+  --accent-soft: #fce8df;
+  --accent-ink: #8b3f1e;
+
+  /* 语义色 */
+  --green: #5b8c5a;
+  --green-soft: #e0ecd9;
+  --blue: #5b7fa0;
+  --blue-soft: #dde6ef;
+  --amber: #c4944e;
+  --amber-soft: #f5e8d0;
+  --rose: #c45b4e;
+  --rose-soft: #f3dad5;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --shadow: 0 2px 8px rgba(45, 42, 38, 0.06), 0 1px 3px rgba(45, 42, 38, 0.04);
+  --shadow-lg: 0 8px 24px rgba(45, 42, 38, 0.08), 0 2px 6px rgba(45, 42, 38, 0.04);
 }

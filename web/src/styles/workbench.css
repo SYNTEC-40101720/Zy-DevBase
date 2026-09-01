@@ -15,10 +15,6 @@ body,
 body {
   overflow: hidden;
   background-color: var(--canvas);
-  background-image:
-    linear-gradient(rgba(76, 94, 80, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(76, 94, 80, 0.035) 1px, transparent 1px);
-  background-size: 32px 32px;
 }
 
 button {
@@ -26,8 +22,8 @@ button {
 }
 
 button:focus-visible {
-  outline: 3px solid rgba(57, 124, 163, 0.38);
-  outline-offset: 3px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 code,
@@ -36,9 +32,13 @@ code,
 .event-progress,
 .connection-status,
 .statusbar,
-.job-meta {
-  font-family: "Cascadia Code", "Consolas", monospace;
+.job-meta,
+.event-count,
+.intro-index {
+  font-family: "JetBrains Mono", "Cascadia Code", "Consolas", monospace;
 }
+
+/* ============ 整体布局 ============ */
 
 .app-shell {
   display: flex;
@@ -49,38 +49,42 @@ code,
   color: var(--ink);
 }
 
+/* ============ 侧栏 ============ */
+
 .activity-rail {
   display: flex;
-  width: 72px;
+  width: 56px;
   height: 100%;
-  flex: 0 0 72px;
+  flex: 0 0 56px;
   flex-direction: column;
   align-items: center;
-  padding: 18px 0 16px;
-  color: #dce5dc;
-  background: #1b2420;
+  padding: 14px 0 12px;
+  color: var(--muted);
+  background: var(--surface);
+  border-right: 1px solid var(--line);
 }
 
 .rail-mark {
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   place-items: center;
-  color: #1b2420;
-  background: var(--lime);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  color: #fff;
+  background: var(--accent);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 .rail-nav,
 .rail-bottom {
   display: grid;
-  gap: 12px;
+  gap: 6px;
 }
 
 .rail-nav {
-  margin-top: 54px;
+  margin-top: 28px;
 }
 
 .rail-bottom {
@@ -89,22 +93,29 @@ code,
 
 .rail-button {
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   place-items: center;
-  color: #94a099;
+  color: var(--muted);
   background: transparent;
   border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: background 120ms, color 120ms;
 }
 
-.rail-button:hover,
-.rail-button.is-selected {
-  color: #f8f8f2;
-  background: rgba(248, 248, 242, 0.09);
-  border-color: rgba(248, 248, 242, 0.14);
+.rail-button:hover {
+  color: var(--ink);
+  background: var(--surface-sunken);
 }
+
+.rail-button.is-selected {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+
+/* ============ 工作台 ============ */
 
 .workbench {
   display: flex;
@@ -118,12 +129,12 @@ code,
 
 .topbar {
   display: flex;
-  min-height: clamp(68px, 9vh, 86px);
+  min-height: 60px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
-  padding: clamp(12px, 1.8vh, 18px) clamp(24px, 4vw, 64px);
-  background: rgba(248, 248, 242, 0.82);
+  padding: 0 clamp(20px, 3vw, 48px);
+  background: var(--surface);
   border-bottom: 1px solid var(--line);
 }
 
@@ -131,20 +142,22 @@ code,
 .intro-band h2,
 .panel-heading h3 {
   margin: 0;
-  font-weight: 650;
-  letter-spacing: 0;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .topbar-title h1 {
-  margin-top: 4px;
-  font-size: clamp(20px, 2vw, 27px);
+  margin-top: 2px;
+  font-size: 18px;
+  color: var(--ink);
 }
 
 .section-kicker {
   color: var(--muted);
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.13em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .connection-status {
@@ -157,192 +170,206 @@ code,
 
 .connection-dot,
 .statusbar-dot {
-  width: 7px;
-  height: 7px;
-  background: var(--coral);
+  width: 6px;
+  height: 6px;
+  background: var(--rose);
   border-radius: 50%;
 }
 
 .connection-dot.is-online,
 .statusbar-dot.is-online {
-  background: var(--blue);
+  background: var(--green);
 }
+
+/* ============ 内容区 ============ */
 
 .content {
   display: flex;
-  width: min(1440px, 100%);
+  width: min(1200px, 100%);
   min-height: 0;
   flex: 1 1 auto;
   flex-direction: column;
   margin: 0 auto;
-  padding: 0 clamp(24px, 4vw, 64px) clamp(16px, 2vh, 42px);
+  padding: 0 clamp(20px, 3vw, 48px) 16px;
   overflow-x: hidden;
   overflow-y: auto;
 }
 
+/* ---- 介绍区 ---- */
+
 .intro-band {
   display: flex;
-  min-height: clamp(136px, 18vh, 190px);
   align-items: end;
   justify-content: space-between;
-  padding: clamp(22px, 3.5vh, 42px) 0 clamp(18px, 2.8vh, 34px);
-  border-bottom: 1px solid var(--line-strong);
+  gap: 24px;
+  padding: 36px 0 28px;
+  border-bottom: 1px solid var(--line);
 }
 
 .intro-band h2 {
-  max-width: 520px;
-  margin-top: 12px;
-  font-size: clamp(31px, 4vw, 56px);
-  line-height: 0.98;
+  max-width: 480px;
+  margin-top: 10px;
+  font-size: clamp(26px, 3.2vw, 40px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
 }
 
 .intro-band p {
-  margin: 16px 0 0;
+  margin: 14px 0 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .intro-index {
   display: grid;
-  gap: 3px;
+  gap: 2px;
+  flex: 0 0 auto;
   justify-items: end;
   color: var(--muted);
-  font-family: "Cascadia Code", "Consolas", monospace;
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.1em;
 }
 
 .intro-index strong {
   color: var(--ink);
-  font-size: 30px;
+  font-size: 24px;
   font-weight: 500;
   letter-spacing: 0;
 }
 
+/* ============ 卡片网格 ============ */
+
 .workspace-grid {
   display: grid;
-  grid-template-columns: minmax(250px, 0.78fr) minmax(360px, 1.22fr);
-  column-gap: 18px;
-  row-gap: clamp(12px, 2vh, 18px);
+  grid-template-columns: minmax(240px, 0.82fr) minmax(340px, 1.18fr);
+  column-gap: 16px;
+  row-gap: 14px;
   min-height: 0;
   flex: 0 0 auto;
-  margin-top: clamp(12px, 2vh, 18px);
+  margin-top: 18px;
 }
 
 .panel {
   min-width: 0;
-  padding: clamp(16px, 1.5vw, 24px);
-  background: rgba(248, 248, 242, 0.88);
+  padding: 20px;
+  background: var(--surface-raised);
   border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
 }
 
 .panel-heading {
   display: flex;
-  min-height: 42px;
-  align-items: start;
+  min-height: 36px;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
 }
 
 .panel-heading h3 {
-  margin-top: 7px;
+  margin-top: 4px;
   overflow: hidden;
-  font-size: 19px;
+  font-size: 15px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .heading-icon {
-  color: var(--blue);
+  color: var(--accent);
 }
+
+/* ---- 健康行 ---- */
 
 .health-line {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: clamp(18px, 3vh, 36px);
-  padding: 13px 0;
+  margin-top: 18px;
+  padding: 12px 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
 
 .health-mark {
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   place-items: center;
   color: var(--faint);
-  background: #e2e5dc;
+  background: var(--surface-sunken);
   border-radius: 50%;
 }
 
 .health-mark.is-healthy {
-  color: #3f612d;
-  background: var(--lime);
+  color: #fff;
+  background: var(--green);
 }
 
-.health-line div {
+.health-line > div {
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 
 .health-line strong {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
+  color: var(--ink);
 }
 
-.health-line span:not(.health-mark) {
+.health-line > div > span {
   color: var(--muted);
-  font-family: "Cascadia Code", "Consolas", monospace;
   font-size: 10px;
 }
+
+/* ---- 操作按钮 ---- */
 
 .action-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: clamp(14px, 2.2vh, 26px);
+  gap: 8px;
+  margin-top: 18px;
 }
 
 .primary-button,
 .secondary-button {
   display: inline-flex;
-  min-height: 40px;
+  min-height: 36px;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   padding: 0 14px;
   border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
+  transition: background 120ms, border-color 120ms, opacity 120ms;
 }
 
 .primary-button {
-  color: #1b2420;
-  background: var(--lime);
+  color: #fff;
+  background: var(--accent);
 }
 
 .primary-button:hover:not(:disabled) {
-  background: #cfe183;
+  background: var(--accent-hover);
 }
 
 .secondary-button {
-  color: var(--ink);
+  color: var(--ink-soft);
   background: transparent;
   border-color: var(--line-strong);
 }
 
 .secondary-button:hover:not(:disabled) {
   border-color: var(--ink);
+  color: var(--ink);
 }
 
 .primary-button:disabled,
 .secondary-button:disabled {
-  color: var(--faint);
-  background: #e3e5de;
-  border-color: transparent;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -350,8 +377,11 @@ code,
   display: flex;
   align-items: start;
   gap: 8px;
-  margin-top: 16px;
-  color: #a74736;
+  margin-top: 14px;
+  padding: 8px 10px;
+  color: var(--rose);
+  background: var(--rose-soft);
+  border-radius: var(--radius-sm);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -361,47 +391,50 @@ code,
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  margin-top: clamp(18px, 3vh, 34px);
+  margin-top: 18px;
   color: var(--muted);
   font-size: 11px;
 }
 
 .policy-line code,
 .job-meta code {
-  color: var(--lime-dark);
+  color: var(--accent-ink);
   font-size: 10px;
 }
 
+/* ---- 任务卡 ---- */
+
 .job-panel {
   display: flex;
-  min-height: clamp(230px, 28vh, 300px);
+  min-height: 220px;
   flex-direction: column;
 }
 
 .status-pill {
   flex: 0 0 auto;
-  padding: 5px 8px;
+  padding: 3px 8px;
   color: var(--muted);
-  background: #e4e6de;
+  background: var(--surface-sunken);
+  border-radius: 100px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .status-running,
 .status-queued {
-  color: #385c79;
-  background: #dce9ef;
+  color: var(--blue);
+  background: var(--blue-soft);
 }
 
 .status-completed {
-  color: #46622b;
-  background: #e2edb9;
+  color: var(--green);
+  background: var(--green-soft);
 }
 
 .status-cancelled,
 .status-failed {
-  color: #994a3a;
-  background: #f3d9d0;
+  color: var(--rose);
+  background: var(--rose-soft);
 }
 
 .job-meta {
@@ -409,7 +442,7 @@ code,
   flex-wrap: wrap;
   align-items: center;
   gap: 9px;
-  margin-top: 31px;
+  margin-top: 24px;
   color: var(--muted);
   font-size: 10px;
 }
@@ -420,7 +453,7 @@ code,
 
 .progress-block {
   margin-top: auto;
-  padding-top: 32px;
+  padding-top: 24px;
 }
 
 .progress-heading {
@@ -433,28 +466,29 @@ code,
 
 .progress-heading strong {
   color: var(--ink);
-  font-family: "Cascadia Code", "Consolas", monospace;
-  font-size: 25px;
-  font-weight: 500;
+  font-size: 22px;
+  font-weight: 600;
 }
 
 .progress-track {
-  height: 10px;
-  margin-top: 13px;
+  height: 8px;
+  margin-top: 10px;
   overflow: hidden;
-  background: #dfe3d8;
+  background: var(--surface-sunken);
+  border-radius: 100px;
 }
 
 .progress-value {
   height: 100%;
   min-width: 0;
-  background: var(--blue);
-  transition: width 220ms ease-out;
+  background: var(--accent);
+  border-radius: 100px;
+  transition: width 280ms ease-out;
 }
 
 .progress-block p {
-  margin: 13px 0 0;
-  color: var(--muted);
+  margin: 10px 0 0;
+  color: var(--ink-soft);
   font-size: 12px;
 }
 
@@ -462,7 +496,7 @@ code,
 .empty-events {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: var(--faint);
   font-size: 12px;
 }
@@ -473,45 +507,45 @@ code,
   flex-direction: column;
 }
 
+/* ---- 事件流 ---- */
+
 .events-panel {
   display: flex;
-  min-height: clamp(170px, 22vh, 260px);
+  min-height: 160px;
   flex: 1 1 0;
   flex-direction: column;
-  margin-top: clamp(10px, 1.5vh, 18px);
-  padding-bottom: 10px;
+  margin-top: 14px;
+  padding-bottom: 8px;
 }
 
 .events-heading {
   align-items: center;
-  padding-bottom: clamp(10px, 1.8vh, 18px);
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
 }
 
 .events-heading h3 {
-  font-size: 18px;
+  font-size: 14px;
 }
 
 .event-count {
   color: var(--faint);
-  font-family: "Cascadia Code", "Consolas", monospace;
   font-size: 10px;
 }
 
 .event-list {
   min-height: 0;
   flex: 1 1 auto;
-  max-height: none;
   overflow: auto;
 }
 
 .event-row {
   display: grid;
-  grid-template-columns: 34px 24px minmax(80px, 0.3fr) minmax(120px, 1fr) 46px 74px;
-  min-height: clamp(36px, 4.5vh, 45px);
+  grid-template-columns: 30px 22px minmax(72px, 0.3fr) minmax(120px, 1fr) 42px 68px;
+  min-height: 34px;
   align-items: center;
   gap: 8px;
-  border-bottom: 1px solid rgba(212, 216, 207, 0.72);
+  border-bottom: 1px solid var(--line);
   font-size: 11px;
 }
 
@@ -532,21 +566,26 @@ code,
 
 .event-icon {
   display: grid;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   place-items: center;
   color: var(--blue);
-  background: #dce9ef;
+  background: var(--blue-soft);
   border-radius: 50%;
 }
 
 .is-progress .event-icon {
   color: var(--faint);
-  background: #e5e8e0;
+  background: var(--surface-sunken);
+}
+
+.is-key .event-icon:has(svg):not(:has(.check-icon)) {
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .event-name {
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .event-message {
@@ -561,20 +600,22 @@ code,
 }
 
 .empty-events {
-  min-height: 110px;
+  min-height: 90px;
   justify-content: center;
 }
 
+/* ============ 状态栏 ============ */
+
 .statusbar {
   display: flex;
-  min-height: 34px;
-  flex: 0 0 34px;
+  min-height: 30px;
+  flex: 0 0 30px;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 0 clamp(24px, 4vw, 64px);
+  padding: 0 clamp(20px, 3vw, 48px);
   color: var(--muted);
-  background: rgba(248, 248, 242, 0.78);
+  background: var(--surface);
   border-top: 1px solid var(--line);
   font-size: 10px;
 }
@@ -582,34 +623,36 @@ code,
 .statusbar span:first-child {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
 }
+
+/* ============ 响应式 ============ */
 
 @media (max-width: 760px) {
   .activity-rail {
-    width: 56px;
-    flex-basis: 56px;
+    width: 48px;
+    flex-basis: 48px;
   }
 
   .rail-mark {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     font-size: 10px;
   }
 
   .rail-button {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
   }
 
   .topbar,
   .content {
-    padding-right: 18px;
-    padding-left: 18px;
+    padding-right: 16px;
+    padding-left: 16px;
   }
 
   .topbar {
-    min-height: 76px;
+    min-height: 54px;
   }
 
   .connection-status span:not(.connection-dot) {
@@ -617,8 +660,7 @@ code,
   }
 
   .intro-band {
-    min-height: 160px;
-    padding-top: 32px;
+    padding: 24px 0 20px;
   }
 
   .intro-index {
@@ -630,7 +672,7 @@ code,
   }
 
   .event-row {
-    grid-template-columns: 30px 22px minmax(72px, 0.45fr) minmax(110px, 1fr) 42px;
+    grid-template-columns: 28px 20px minmax(66px, 0.45fr) minmax(100px, 1fr) 38px;
   }
 
   .event-row time {
@@ -638,8 +680,8 @@ code,
   }
 
   .statusbar {
-    padding-right: 18px;
-    padding-left: 18px;
+    padding-right: 16px;
+    padding-left: 16px;
   }
 
   .statusbar span:last-child {
@@ -649,11 +691,11 @@ code,
 
 @media (max-width: 480px) {
   .panel {
-    padding: 18px;
+    padding: 16px;
   }
 
   .intro-band h2 {
-    font-size: 34px;
+    font-size: 28px;
   }
 
   .action-row > button {
@@ -661,8 +703,8 @@ code,
   }
 
   .event-row {
-    grid-template-columns: 25px 22px minmax(68px, 0.6fr) 44px;
-    gap: 5px;
+    grid-template-columns: 24px 20px minmax(62px, 0.6fr) 40px;
+    gap: 6px;
   }
 
   .event-message {
