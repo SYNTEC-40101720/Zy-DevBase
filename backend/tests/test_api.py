@@ -27,6 +27,7 @@ def test_static_frontend_does_not_mask_api(tmp_path: Path) -> None:
     assert client.get("/").status_code == 200
     assert client.get("/").text == "<html>template</html>"
     assert client.get("/api/v1/health").status_code == 200
+    assert client.get("/api/v1/health").json()["service"] == "zy"
 
 
 def test_health_reports_window_close_mode() -> None:

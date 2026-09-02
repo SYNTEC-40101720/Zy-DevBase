@@ -82,35 +82,6 @@ class SnapshotResponse(BaseModel):
     event_cursor: int
 
 
-class CalcPressRequest(BaseModel):
-    """Body for ``POST /calc/press`` — a single calculator key string."""
-
-    key: str
-
-
-class CalcHistoryItem(BaseModel):
-    expression: str
-    result: str
-
-
-class CalcStateResponse(BaseModel):
-    display: str
-    expression: list[str]
-    error: bool
-    memory: list[str]
-    history: list[CalcHistoryItem]
-
-
-def calc_state_response(view: dict[str, Any]) -> CalcStateResponse:
-    return CalcStateResponse(
-        display=view["display"],
-        expression=list(view["expression"]),
-        error=bool(view["error"]),
-        memory=list(view["memory"]),
-        history=[CalcHistoryItem(**item) for item in view["history"]],
-    )
-
-
 def job_response(job: JobSnapshot | None) -> JobResponse | None:
     if job is None:
         return None

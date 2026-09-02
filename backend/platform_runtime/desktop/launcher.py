@@ -94,7 +94,7 @@ def run_desktop(
     port: int = 8000,
     close_mode: WindowCloseMode = WindowCloseMode.STOP_ON_CLOSE,
     *,
-    window_title: str = "Platform Runtime Template",
+    window_title: str = "Zy",
     window_width: int = 1280,
     window_height: int = 800,
     readiness_timeout: float = 10.0,

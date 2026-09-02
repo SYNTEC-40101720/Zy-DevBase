@@ -12,16 +12,15 @@ A new tool plugs in by registering a descriptor; it never touches the
 runtime, the API, or the desktop layer:
 
     from platform_runtime.application.manifest import ToolDescriptor, ToolRegistry
-    from my_tool import calc_task
+    from my_tool import my_task
 
     registry.register(ToolDescriptor(
-        kind="calculator",
-        title="计算器",
+        kind="my_tool",
+        title="我的工具",
         group="tool",
-        glyph="calc",
-        access_key="c",
-        mode="interactive",       # owns a session, not a oneshot task
-        task=None,                # no JobRuntime task
+        glyph="play",
+        access_key="m",
+        task=my_task,
     ))
 """
 
@@ -40,8 +39,7 @@ class ToolDescriptor:
     Mirrors ``NavCategoryInitializer``: identity (``kind``), presentation
     (``title``/``subtitle``/``glyph``/``access_key``), grouping (``group``),
     capability flag (``supports_input``), execution model (``mode``), and
-    the work itself (``task`` — None for interactive/system tools that own
-    their session outside JobRuntime).
+    the work itself (``task`` — None for system tools without a task).
     """
 
     kind: str

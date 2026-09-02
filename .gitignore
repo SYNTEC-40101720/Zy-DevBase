@@ -8,3 +8,7 @@ backend/*.egg-info/
 web/node_modules/
 web/dist/
 web/*.tsbuildinfo
+
+dist/
+build/
+.pkg_tmp/

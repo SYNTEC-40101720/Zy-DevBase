@@ -1,9 +1,7 @@
 """Tests for the declarative tool manifest, ports, and resource provider.
 
-These cover the phase-1 borrows from Microsoft Calculator: the
-NavCategory-style ``ToolRegistry``/``ToolDescriptor``, the
-``ICalcDisplay``-style ``DisplaySink`` port, and the
-``AppResourceProvider``-style ``ResourceProvider``.
+These cover the NavCategory-style ``ToolRegistry``/``ToolDescriptor``
+and the ``AppResourceProvider``-style ``ResourceProvider``.
 """
 
 from __future__ import annotations
@@ -12,7 +10,7 @@ import threading
 
 from platform_runtime.application.manifest import ToolDescriptor, ToolRegistry
 from platform_runtime.application.task import TaskContext, TaskNotFoundError
-from platform_runtime.domain.ports import DisplaySink, ProgressSink
+from platform_runtime.domain.ports import ProgressSink
 from platform_runtime.domain.resources import InMemoryResourceProvider, get_default
 
 
@@ -77,26 +75,6 @@ def test_task_context_satisfies_progress_sink_protocol() -> None:
     assert ctx.is_cancelled() is False
     ctx.report_progress(0.5, "half")
     # report is a no-op stub here; just must not raise
-
-
-def test_display_sink_is_a_structural_protocol() -> None:
-    class FakeDisplay:
-        def set_primary(self, value: str, *, is_error: bool = False) -> None:
-            pass
-
-        def set_expression(self, tokens: tuple[str, ...]) -> None:
-            pass
-
-        def set_memory(self, slots: tuple[str, ...]) -> None:
-            pass
-
-        def add_history(self, expression: str, result: str) -> int:
-            return 0
-
-        def set_error(self, is_error: bool) -> None:
-            pass
-
-    assert isinstance(FakeDisplay(), DisplaySink)
 
 
 def test_resource_provider_resolves_and_formats() -> None:

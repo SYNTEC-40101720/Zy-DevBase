@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, LayoutGrid, Monitor, Moon, PanelLeft, Settings, Sun } from "lucide-react";
+import appLogo from "../assets/app-logo.svg";
 
 /* ============================================================
  *  工作台外壳 — 借鉴 DeepSeek Harness 侧边栏设计
@@ -97,16 +98,16 @@ export default function App() {
             <button
               type="button"
               className="sidebar-brand"
-              title="Platform"
+              title="Zy"
               onClick={() => setView("workbench")}
             >
-              <span className="sidebar-brand-mark">P</span>
-              <span className="sidebar-brand-name">Platform</span>
+              <img className="sidebar-brand-mark" src={appLogo} alt="Zy" />
+              <span className="sidebar-brand-name">Zy</span>
             </button>
           )}
           {collapsed && (
             <>
-              <span className="sidebar-brand-mark" title="Platform">P</span>
+              <img className="sidebar-brand-mark" src={appLogo} alt="Zy" title="Zy" />
               <button
                 type="button"
                 className="sidebar-toggle sidebar-toggle-rail"
@@ -278,7 +279,7 @@ export default function App() {
                     <dl className="settings-kv">
                       <div className="settings-kv-row">
                         <dt>名称</dt>
-                        <dd>Platform Runtime Template</dd>
+                        <dd>Zy</dd>
                       </div>
                       <div className="settings-kv-row">
                         <dt>版本</dt>
