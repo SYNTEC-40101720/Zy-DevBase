@@ -1,4 +1,5 @@
 __pycache__/
+_refs/
 
 backend/.venv/
 backend/.pytest_cache/

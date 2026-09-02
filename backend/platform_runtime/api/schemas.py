@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -25,6 +25,17 @@ class JobResponse(BaseModel):
     updated_at: datetime
 
 
+class StartJobRequest(BaseModel):
+    """Body for ``POST /jobs/start``.
+
+    ``kind`` defaults to ``demo_long_task`` when omitted, so existing
+    callers that post an empty body keep working.
+    """
+
+    kind: str = "demo_long_task"
+    input: dict[str, Any] = {}
+
+
 class EventResponse(BaseModel):
     sequence: int
     event_id: str
@@ -40,6 +51,35 @@ class SnapshotResponse(BaseModel):
     job: JobResponse | None
     events: list[EventResponse]
     event_cursor: int
+
+
+class CalcPressRequest(BaseModel):
+    """Body for ``POST /calc/press`` — a single calculator key string."""
+
+    key: str
+
+
+class CalcHistoryItem(BaseModel):
+    expression: str
+    result: str
+
+
+class CalcStateResponse(BaseModel):
+    display: str
+    expression: list[str]
+    error: bool
+    memory: list[str]
+    history: list[CalcHistoryItem]
+
+
+def calc_state_response(view: dict[str, Any]) -> CalcStateResponse:
+    return CalcStateResponse(
+        display=view["display"],
+        expression=list(view["expression"]),
+        error=bool(view["error"]),
+        memory=list(view["memory"]),
+        history=[CalcHistoryItem(**item) for item in view["history"]],
+    )
 
 
 def job_response(job: JobSnapshot | None) -> JobResponse | None:

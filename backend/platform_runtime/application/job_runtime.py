@@ -1,10 +1,32 @@
+"""Single-job in-memory runtime with pluggable tools.
+
+The runtime owns one in-memory job at a time, executed on a background
+thread. Tools are looked up by ``kind`` in a :class:`ToolRegistry` — new
+tools register a :class:`ToolDescriptor` (title, group, glyph, task) at
+startup without touching the runtime, the API, or the desktop layer.
+
+Borrowed from Microsoft Calculator: the engine (CalcManager) declares
+ports (``ICalcDisplay``/``IHistoryDisplay``) and the host implements them;
+here :class:`TaskContext` implements :class:`ProgressSink` and is the only
+thing a task body sees. User-facing strings flow through a
+:class:`ResourceProvider` so logic never hard-codes localization.
+
+Demo tool (``demo_long_task``) is registered by default so the template
+works out of the box.
+"""
+
+from __future__ import annotations
+
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from threading import Event, RLock, Thread
+from typing import Any
 from uuid import uuid4
 
 from platform_runtime.domain.events import EventKind, RuntimeEvent
 from platform_runtime.domain.job import JobSnapshot, JobStatus, RuntimeSnapshot
+from platform_runtime.domain.resources import ResourceProvider, get_default
 
 from .errors import (
     JobAlreadyRunningError,
@@ -12,6 +34,8 @@ from .errors import (
     NoCurrentJobError,
 )
 from .event_bus import InMemoryEventBus
+from .manifest import ToolDescriptor, ToolRegistry
+from .task import TaskContext
 
 
 @dataclass(slots=True)
@@ -27,12 +51,20 @@ class _MutableJob:
 
 
 class JobRuntime:
-    """Owns one in-memory demo job and its worker thread."""
+    """Owns one in-memory job and its worker thread.
+
+    Pass a :class:`ToolRegistry` so ``start(kind)`` can look up the tool;
+    the default registry has only the built-in demo tool. Pass a
+    :class:`ResourceProvider` to localize messages; defaults to the
+    in-process Chinese table.
+    """
 
     def __init__(
         self,
         event_bus: InMemoryEventBus | None = None,
         *,
+        registry: ToolRegistry | None = None,
+        resources: ResourceProvider | None = None,
         total_steps: int = 10,
         step_delay: float = 0.2,
     ) -> None:
@@ -41,12 +73,24 @@ class JobRuntime:
         if step_delay < 0:
             raise ValueError("step_delay must not be negative")
         self._event_bus = event_bus or InMemoryEventBus()
+        self._registry = registry or _default_registry(total_steps, step_delay)
+        self._resources = resources or get_default()
         self._total_steps = total_steps
         self._step_delay = step_delay
         self._lock = RLock()
         self._active: _MutableJob | None = None
 
-    def start_demo(self) -> JobSnapshot:
+    # ---- public API ----
+
+    def start(
+        self,
+        kind: str = "demo_long_task",
+        *,
+        input: dict[str, Any] | None = None,
+    ) -> JobSnapshot:
+        """Look up ``kind`` in the registry and start it on a background thread."""
+        descriptor = self._registry.get(kind)
+        task = descriptor.task
         with self._lock:
             if self._active and not self._active.status.is_terminal:
                 raise JobAlreadyRunningError("a non-terminal job is already running")
@@ -54,10 +98,10 @@ class JobRuntime:
             now = _utc_now()
             job = _MutableJob(
                 job_id=str(uuid4()),
-                kind="demo_long_task",
+                kind=kind,
                 status=JobStatus.QUEUED,
                 progress=0,
-                message="演示任务已排队",
+                message=self._resources.string("job.queued", kind=kind),
                 created_at=now,
                 updated_at=now,
                 cancellation_requested=Event(),
@@ -67,12 +111,16 @@ class JobRuntime:
             snapshot = self._snapshot_locked(job)
 
         Thread(
-            target=self._run_demo,
-            args=(job.job_id,),
-            name=f"platform-demo-{job.job_id[:8]}",
+            target=self._run_task,
+            args=(job.job_id, task, input or {}),
+            name=f"platform-{kind}-{job.job_id[:8]}",
             daemon=True,
         ).start()
         return snapshot
+
+    def start_demo(self) -> JobSnapshot:
+        """Backward-compatible shortcut for ``start('demo_long_task')``."""
+        return self.start("demo_long_task")
 
     def cancel_current(self) -> JobSnapshot:
         with self._lock:
@@ -86,7 +134,7 @@ class JobRuntime:
                 self._active,
                 status=JobStatus.CANCELLED,
                 kind=EventKind.JOB_CANCELLED,
-                message="任务已取消",
+                message=self._resources.string("job.cancelled"),
             )
             return self._snapshot_locked(self._active)
 
@@ -117,7 +165,18 @@ class JobRuntime:
     ) -> tuple[RuntimeEvent, ...]:
         return self._event_bus.wait_for_events(after_sequence, timeout)
 
-    def _run_demo(self, job_id: str) -> None:
+    def registry(self) -> ToolRegistry:
+        """Expose the tool registry for the API/frontend nav layer."""
+        return self._registry
+
+    # ---- task execution ----
+
+    def _run_task(
+        self,
+        job_id: str,
+        task: object,
+        input: dict[str, Any],
+    ) -> None:
         try:
             with self._lock:
                 job = self._get_active_locked(job_id)
@@ -127,12 +186,11 @@ class JobRuntime:
                     job,
                     status=JobStatus.RUNNING,
                     kind=EventKind.JOB_STARTED,
-                    message="演示任务运行中",
+                    message=self._resources.string("job.running", kind=job.kind),
                 )
+                cancel_event = job.cancellation_requested
 
-            for step in range(1, self._total_steps + 1):
-                if job.cancellation_requested.wait(self._step_delay):
-                    return
+            def report(progress: float, message: str) -> None:
                 with self._lock:
                     job = self._get_active_locked(job_id)
                     if (
@@ -145,19 +203,36 @@ class JobRuntime:
                         job,
                         status=JobStatus.RUNNING,
                         kind=EventKind.PROGRESS,
-                        progress=round(step * 100 / self._total_steps),
-                        message=f"演示任务进度 {step}/{self._total_steps}",
+                        progress=round(max(0.0, min(1.0, progress)) * 100),
+                        message=message or job.message,
                     )
+
+            ctx = TaskContext(
+                job_id=job_id,
+                kind=self._active.kind if self._active else "",
+                cancel_event=cancel_event,
+                report=report,
+            )
+
+            result = task(ctx)  # type: ignore[operator]
+            if isinstance(result, dict):
+                result_message = result.get("message")
+            else:
+                result_message = None
+            if not result_message:
+                result_message = self._resources.string("job.completed")
 
             with self._lock:
                 job = self._get_active_locked(job_id)
                 if job is not None and not job.status.is_terminal:
+                    if job.cancellation_requested.is_set():
+                        return
                     self._set_state_locked(
                         job,
                         status=JobStatus.COMPLETED,
                         kind=EventKind.JOB_COMPLETED,
                         progress=100,
-                        message="演示任务已完成",
+                        message=result_message,
                     )
         except Exception as exc:
             with self._lock:
@@ -167,8 +242,10 @@ class JobRuntime:
                         job,
                         status=JobStatus.FAILED,
                         kind=EventKind.JOB_FAILED,
-                        message=f"演示任务失败: {exc}",
+                        message=self._resources.string("job.failed", exc=exc),
                     )
+
+    # ---- internals ----
 
     def _get_active_locked(self, job_id: str) -> _MutableJob | None:
         if self._active is None or self._active.job_id != job_id:
@@ -216,6 +293,42 @@ class JobRuntime:
             created_at=job.created_at,
             updated_at=job.updated_at,
         )
+
+
+def demo_long_task(ctx: TaskContext, *, total_steps: int = 10, step_delay: float = 0.2) -> dict[str, Any]:
+    """Built-in demo task: counts to ``total_steps`` unless cancelled.
+
+    Registered as ``demo_long_task``. Real tools register their own task
+    and never modify the runtime.
+    """
+    res = get_default()
+    for step in range(1, total_steps + 1):
+        if ctx.is_cancelled():
+            return {"done": False, "message": res.string("demo.cancelled")}
+        ctx.report_progress(step / total_steps, res.string("demo.progress", step=step, total=total_steps))
+        time.sleep(step_delay)
+    return {"done": True, "message": res.string("demo.completed")}
+
+
+def _default_registry(total_steps: int, step_delay: float) -> ToolRegistry:
+    """Build a registry with the built-in demo tool bound to the runtime's params."""
+    registry = ToolRegistry()
+
+    def _demo(ctx: TaskContext) -> dict[str, Any]:
+        return demo_long_task(ctx, total_steps=total_steps, step_delay=step_delay)
+
+    registry.register(
+        ToolDescriptor(
+            kind="demo_long_task",
+            title="演示任务",
+            group="demo",
+            glyph="play",
+            access_key="d",
+            supports_input=False,
+            task=_demo,
+        )
+    )
+    return registry
 
 
 def _utc_now() -> datetime:

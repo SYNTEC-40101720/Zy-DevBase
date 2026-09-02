@@ -1,8 +1,14 @@
 from fastapi import APIRouter, Depends
 
 from platform_runtime.api.dependencies import get_runtime
-from platform_runtime.api.schemas import JobResponse, SnapshotResponse, snapshot_response
+from platform_runtime.api.schemas import (
+    JobResponse,
+    SnapshotResponse,
+    StartJobRequest,
+    snapshot_response,
+)
 from platform_runtime.application.job_runtime import JobRuntime
+from platform_runtime.application.task import TaskNotFoundError
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -13,8 +19,18 @@ def current_job(runtime: JobRuntime = Depends(get_runtime)) -> SnapshotResponse:
 
 
 @router.post("/start", response_model=JobResponse, status_code=201)
-def start_job(runtime: JobRuntime = Depends(get_runtime)) -> JobResponse:
-    job = runtime.start_demo()
+def start_job(
+    body: StartJobRequest | None = None,
+    runtime: JobRuntime = Depends(get_runtime),
+) -> JobResponse:
+    """Start a task by ``kind``.
+
+    Body defaults to ``{"kind": "demo_long_task"}`` when omitted, so a bare
+    ``POST /jobs/start`` still works. Unknown kinds raise ``TaskNotFoundError``
+    which the app maps to 404.
+    """
+    request = body or StartJobRequest()
+    job = runtime.start(request.kind, input=request.input)
     return JobResponse(
         id=job.job_id,
         kind=job.kind,
