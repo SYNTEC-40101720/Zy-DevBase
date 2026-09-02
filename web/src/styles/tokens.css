@@ -1,46 +1,51 @@
 :root {
-  font-family: "Inter", -apple-system, "Segoe UI", "Noto Sans SC", sans-serif;
+  font-family: "Segoe UI Variable Text", "Segoe UI", -apple-system,
+    "Noto Sans SC", system-ui, sans-serif;
   color: var(--ink);
   background: var(--canvas);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 
-  /* 暖纸色画布 */
-  --canvas: #f0eee6;
-  --surface: #faf9f5;
-  --surface-raised: #ffffff;
-  --surface-sunken: #ebe8df;
+  /* ---- Fluent surfaces (Windows Calculator light) ---- */
+  --canvas: #f3f3f3;          /* window chrome */
+  --surface: #ffffff;          /* cards / display region */
+  --surface-raised: #fbfbfb;   /* standard key surface */
+  --surface-sunken: #f0f0f0;   /* hover/pressed fill */
+  --surface-fill: #e9e9e9;     /* deep pressed fill */
 
-  /* 文字 */
-  --ink: #2d2a26;
-  --ink-soft: #555049;
-  --muted: #8b8680;
-  --faint: #b5b0a8;
+  /* ---- text ---- */
+  --ink: #1a1a1a;              /* primary */
+  --ink-soft: #5f5f5f;         /* secondary */
+  --muted: #8a8a8a;            /* tertiary */
+  --faint: #ababab;            /* disabled/hint */
 
-  /* 线条 */
-  --line: #e0ddd2;
-  --line-strong: #d0ccbe;
+  /* ---- strokes ---- */
+  --line: #e5e5e5;             /* hairline separators */
+  --line-strong: #d1d1d1;      /* stronger dividers */
 
-  /* Claude 珊瑚橙 */
-  --accent: #d97757;
-  --accent-hover: #c4663f;
-  --accent-soft: #fce8df;
-  --accent-ink: #8b3f1e;
+  /* ---- Windows 11 accent (default system blue) ---- */
+  --accent: #005fb8;
+  --accent-hover: #0067c0;
+  --accent-pressed: #00529c;
+  --accent-soft: #e8f1fb;
+  --accent-ink: #004890;
 
-  /* 语义色 */
-  --green: #5b8c5a;
-  --green-soft: #e0ecd9;
-  --blue: #5b7fa0;
-  --blue-soft: #dde6ef;
-  --amber: #c4944e;
-  --amber-soft: #f5e8d0;
-  --rose: #c45b4e;
-  --rose-soft: #f3dad5;
+  /* ---- semantic ---- */
+  --green: #107c10;
+  --green-soft: #e3efdd;
+  --blue: #005fb8;
+  --blue-soft: #e8f1fb;
+  --amber: #c19c00;
+  --amber-soft: #fbf3d6;
+  --rose: #c42b1c;
+  --rose-soft: #fde7e4;
 
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 14px;
-  --shadow: 0 2px 8px rgba(45, 42, 38, 0.06), 0 1px 3px rgba(45, 42, 38, 0.04);
-  --shadow-lg: 0 8px 24px rgba(45, 42, 38, 0.08), 0 2px 6px rgba(45, 42, 38, 0.04);
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+  --radius-pill: 999px;
+
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
 }

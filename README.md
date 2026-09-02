@@ -34,12 +34,14 @@ platform_template/
 
 | 层 | 职责 | 依赖 |
 | --- | --- | --- |
-| `domain` | 任务状态机、领域事件值对象 | 无框架依赖 |
-| `application` | 内存运行时、事件总线、窗口生命周期 | 仅依赖 `domain` |
+| `domain` | 任务状态机、领域事件值对象、**端口契约**（`ProgressSink`/`DisplaySink`）、**资源提供者** | 无框架依赖 |
+| `application` | 内存运行时、事件总线、窗口生命周期、**声明式工具清单**（`ToolRegistry`/`ToolDescriptor`） | 仅依赖 `domain` |
 | `api` | FastAPI 工厂、路由、Pydantic 契约 | 依赖 `application` |
 | `desktop` | pywebview 窗口、本地服务托管 | 依赖 `api` |
 
 业务核心在 `domain` 和 `application`，不绑定 FastAPI 或 pywebview，可独立单元测试。换新业务时只改这两层，`api` / `desktop` / 前端骨架不动。
+
+> 架构借鉴自微软开源 Windows 计算器（`Microsoft/calculator`）：引擎在 `domain` 声明它需要的**端口**（对应其 `ICalcDisplay`/`IHistoryDisplay`），宿主在 `application` 实现；工具以**声明式清单**注册（对应其 `NavCategoryStates.CategoryManifest`），前端导航栏从清单渲染；用户可见字符串走**资源提供者**，逻辑内不硬编码本地化文本。
 
 ## 本地开发
 
@@ -107,11 +109,15 @@ Vite 开发服务器默认在 `http://localhost:5173`，会把 `/api` 和 WebSoc
 | --- | --- | --- |
 | GET | `/health` | 健康检查 |
 | GET | `/jobs/current` | 当前任务快照 |
-| POST | `/jobs/start` | 启动演示任务 |
+| POST | `/jobs/start` | 启动任务（按 `kind` 查清单） |
 | POST | `/jobs/cancel` | 取消当前任务 |
 | WS | `/events` | 事件流（含重放） |
+| GET | `/calc/state` | 计算器当前视图 |
+| POST | `/calc/press` | 应用一次按键，返回新视图 |
 
-运行时只允许一个非终态任务。演示任务通过后台线程执行，支持完成、取消、冲突检测和失败状态。事件总线合并相邻的同任务进度事件，重放历史默认最多 512 个事件；重连时以当前任务快照为权威状态。
+运行时只允许一个非终态任务。任务通过后台线程执行，支持完成、取消、冲突检测和失败状态。事件总线合并相邻的同任务进度事件，重放历史默认最多 512 个事件；重连时以当前任务快照为权威状态。
+
+计算器走另一条路径：`CalculatorSession` 是长生命周期交互式会话，按键同步作用于引擎、即时返回视图，不经过 `JobRuntime` 与事件总线。它是交互式工具的参考实现。
 
 ## 扩展新工具
 

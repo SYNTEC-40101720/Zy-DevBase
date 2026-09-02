@@ -1,4 +1,4 @@
-import type { HealthResponse, Job, Snapshot } from "./types";
+import type { CalcState, HealthResponse, Job, Snapshot } from "./types";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 
@@ -30,6 +30,17 @@ export function startDemoJob(): Promise<Job> {
 
 export function cancelCurrentJob(): Promise<Job> {
   return request<Job>("/jobs/cancel", { method: "POST" });
+}
+
+export function fetchCalcState(): Promise<CalcState> {
+  return request<CalcState>("/calc/state");
+}
+
+export function pressCalcKey(key: string): Promise<CalcState> {
+  return request<CalcState>("/calc/press", {
+    method: "POST",
+    body: JSON.stringify({ key }),
+  });
 }
 
 export function eventsWebSocketUrl(): string {

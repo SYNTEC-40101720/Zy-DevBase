@@ -47,6 +47,19 @@ export interface Snapshot {
   event_cursor: number;
 }
 
+export interface CalcHistoryItem {
+  expression: string;
+  result: string;
+}
+
+export interface CalcState {
+  display: string;
+  expression: string[];
+  error: boolean;
+  memory: string[];
+  history: CalcHistoryItem[];
+}
+
 export type SocketMessage =
   | { type: "health"; data: HealthResponse }
   | { type: "snapshot"; data: Snapshot }
