@@ -13,8 +13,8 @@ from urllib.request import urlopen
 import uvicorn
 from fastapi import FastAPI
 
-from platform_runtime.api.app import create_app
-from platform_runtime.application.lifecycle import (
+from zy_devbase.api.app import create_app
+from zy_devbase.application.lifecycle import (
     LifecyclePolicy,
     WindowCloseMode,
 )
@@ -124,7 +124,7 @@ def run_desktop(
     stop_event = Event()
     server_thread = Thread(
         target=server.run,
-        name="platform-template-api-server",
+        name="zy-devbase-api-server",
         daemon=True,
     )
 

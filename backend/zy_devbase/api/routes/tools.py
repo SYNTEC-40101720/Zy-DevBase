@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends
 
-from platform_runtime.api.dependencies import get_runtime
-from platform_runtime.api.schemas import (
+from zy_devbase.api.dependencies import get_runtime
+from zy_devbase.api.schemas import (
     ToolDescriptorResponse,
     ToolListResponse,
     tool_descriptor_response,
 )
-from platform_runtime.application.job_runtime import JobRuntime
+from zy_devbase.application.job_runtime import JobRuntime
 
 router = APIRouter(prefix="/tools", tags=["tools"])
 

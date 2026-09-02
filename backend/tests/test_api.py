@@ -3,10 +3,10 @@ from time import monotonic, sleep
 
 from fastapi.testclient import TestClient
 
-from platform_runtime.api.app import create_app
-from platform_runtime.application.job_runtime import JobRuntime
-from platform_runtime.application.lifecycle import LifecyclePolicy, WindowCloseMode
-from platform_runtime.domain.job import JobStatus
+from zy_devbase.api.app import create_app
+from zy_devbase.application.job_runtime import JobRuntime
+from zy_devbase.application.lifecycle import LifecyclePolicy, WindowCloseMode
+from zy_devbase.domain.job import JobStatus
 
 
 def wait_for_terminal(runtime: JobRuntime) -> None:

@@ -3,7 +3,7 @@ from contextlib import suppress
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from platform_runtime.api.schemas import event_response, snapshot_response
+from zy_devbase.api.schemas import event_response, snapshot_response
 
 router = APIRouter(tags=["events"])
 

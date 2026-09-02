@@ -11,7 +11,7 @@ input — plus the task callable itself. The runtime looks a tool up by
 A new tool plugs in by registering a descriptor; it never touches the
 runtime, the API, or the desktop layer:
 
-    from platform_runtime.application.manifest import ToolDescriptor, ToolRegistry
+    from zy_devbase.application.manifest import ToolDescriptor, ToolRegistry
     from my_tool import my_task
 
     registry.register(ToolDescriptor(
