@@ -43,6 +43,10 @@ platform_template/
 
 > 架构借鉴自微软开源 Windows 计算器（`Microsoft/calculator`）：引擎在 `domain` 声明它需要的**端口**（对应其 `ICalcDisplay`/`IHistoryDisplay`），宿主在 `application` 实现；工具以**声明式清单**注册（对应其 `NavCategoryStates.CategoryManifest`），前端导航栏从清单渲染；用户可见字符串走**资源提供者**，逻辑内不硬编码本地化文本。
 
+### 前端骨架
+
+前端是一个纯外壳：侧边栏（可拖拽调宽、折叠为 rail、悬停揭示展开）、工作台空态起始页、内联设置页（主题切换 + 侧边栏宽度调节）。不包含任何业务视图——作为模板，后续按需在 `web/src/app/` 添加工具视图。
+
 ## 本地开发
 
 ### 后端
@@ -99,7 +103,7 @@ cd web
 npm run dev
 ```
 
-Vite 开发服务器默认在 `http://localhost:5173`，会把 `/api` 和 WebSocket 请求代理到 `localhost:8000`。也可用 `VITE_API_BASE_URL` 和 `VITE_WS_URL` 指向其他本地服务。
+Vite 开发服务器默认在 `http://localhost:5173`，会把 `/api` 和 WebSocket 请求代理到 `localhost:8000`。
 
 ## API
 
@@ -112,18 +116,19 @@ Vite 开发服务器默认在 `http://localhost:5173`，会把 `/api` 和 WebSoc
 | POST | `/jobs/start` | 启动任务（按 `kind` 查清单） |
 | POST | `/jobs/cancel` | 取消当前任务 |
 | WS | `/events` | 事件流（含重放） |
-| GET | `/calc/state` | 计算器当前视图 |
-| POST | `/calc/press` | 应用一次按键，返回新视图 |
+| GET | `/tools` | 已注册工具清单（供前端导航渲染） |
+| GET | `/calc/state` | 计算器当前视图（参考实现） |
+| POST | `/calc/press` | 应用一次按键，返回新视图（参考实现） |
 
 运行时只允许一个非终态任务。任务通过后台线程执行，支持完成、取消、冲突检测和失败状态。事件总线合并相邻的同任务进度事件，重放历史默认最多 512 个事件；重连时以当前任务快照为权威状态。
 
-计算器走另一条路径：`CalculatorSession` 是长生命周期交互式会话，按键同步作用于引擎、即时返回视图，不经过 `JobRuntime` 与事件总线。它是交互式工具的参考实现。
+`/tools` 返回 `ToolRegistry` 中所有 `ToolDescriptor`，前端可据此渲染导航栏。`/calc/*` 是交互式工具的参考实现：`CalculatorSession` 是长生命周期会话，按键同步作用于引擎、即时返回视图，不经过 `JobRuntime` 与事件总线。
 
 ## 扩展新工具
 
 1. 替换 `domain/` 和 `application/` 里的业务逻辑（任务、事件、状态机）
 2. 在 `api/routes/` 增改路由，在 `api/schemas.py` 调整响应模型
-3. 改 `web/src/app/App.tsx` 的工作台界面
+3. 在 `web/src/app/` 添加工具视图，在 `App.tsx` 导航列表注册
 4. 调 `main.py` 和 `desktop/launcher.py` 的窗口标题、尺寸
 5. 不动 `event_bus` / `desktop` 骨架，除非确有需要
 

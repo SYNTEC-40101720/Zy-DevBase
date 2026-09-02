@@ -4,6 +4,7 @@ from typing import Any, Literal
 from pydantic import BaseModel
 
 from platform_runtime.application.lifecycle import WindowCloseMode
+from platform_runtime.application.manifest import ToolDescriptor
 from platform_runtime.domain.events import EventKind, RuntimeEvent
 from platform_runtime.domain.job import JobSnapshot, JobStatus, RuntimeSnapshot
 
@@ -34,6 +35,34 @@ class StartJobRequest(BaseModel):
 
     kind: str = "demo_long_task"
     input: dict[str, Any] = {}
+
+
+class ToolDescriptorResponse(BaseModel):
+    kind: str
+    title: str
+    subtitle: str | None = None
+    group: str
+    glyph: str
+    access_key: str | None = None
+    supports_input: bool = False
+    mode: str = "oneshot"
+
+
+class ToolListResponse(BaseModel):
+    tools: list[ToolDescriptorResponse]
+
+
+def tool_descriptor_response(d: ToolDescriptor) -> ToolDescriptorResponse:
+    return ToolDescriptorResponse(
+        kind=d.kind,
+        title=d.title,
+        subtitle=d.subtitle,
+        group=d.group,
+        glyph=d.glyph,
+        access_key=d.access_key,
+        supports_input=d.supports_input,
+        mode=d.mode,
+    )
 
 
 class EventResponse(BaseModel):

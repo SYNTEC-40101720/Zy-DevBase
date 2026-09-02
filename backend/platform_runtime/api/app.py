@@ -15,7 +15,7 @@ from platform_runtime.application.errors import (
 from platform_runtime.application.job_runtime import JobRuntime
 from platform_runtime.application.lifecycle import LifecyclePolicy, WindowLifecycle
 
-from .routes import calc, events, jobs, system
+from .routes import calc, events, jobs, system, tools
 
 
 def create_app(
@@ -48,6 +48,7 @@ def create_app(
     app.include_router(jobs.router, prefix="/api/v1")
     app.include_router(events.router, prefix="/api/v1")
     app.include_router(calc.router, prefix="/api/v1")
+    app.include_router(tools.router, prefix="/api/v1")
 
     if static_dir is not None:
         static_path = Path(static_dir)

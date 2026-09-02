@@ -20,8 +20,8 @@ runtime, the API, or the desktop layer:
         group="tool",
         glyph="calc",
         access_key="c",
-        supports_input=False,
-        task=calc_task,
+        mode="interactive",       # owns a session, not a oneshot task
+        task=None,                # no JobRuntime task
     ))
 """
 
@@ -35,20 +35,24 @@ from .task import Task, TaskNotFoundError
 
 @dataclass(frozen=True, slots=True)
 class ToolDescriptor:
-    """A single tool's declarative metadata + task callable.
+    """A single tool's declarative metadata + optional task callable.
 
     Mirrors ``NavCategoryInitializer``: identity (``kind``), presentation
-    (``title``/``glyph``/``access_key``), grouping (``group``), capability
-    flag (``supports_input``), and the work itself (``task``).
+    (``title``/``subtitle``/``glyph``/``access_key``), grouping (``group``),
+    capability flag (``supports_input``), execution model (``mode``), and
+    the work itself (``task`` — None for interactive/system tools that own
+    their session outside JobRuntime).
     """
 
     kind: str
     title: str
     group: str
     glyph: str
-    task: Task
+    task: Task | None = None
     access_key: str | None = None
     supports_input: bool = False
+    mode: str = "oneshot"
+    subtitle: str | None = None
     # Optional opaque config the task may read at call time (e.g. limits).
     config: dict[str, Any] = field(default_factory=dict, hash=False, compare=False)
 

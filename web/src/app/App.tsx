@@ -1,38 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Calculator as CalcIcon,
-  PanelLeft,
-  Radio,
-  Settings,
-  X,
-} from "lucide-react";
-
-import Calculator from "./Calculator";
-import Console from "./Console";
+import { ArrowLeft, LayoutGrid, Monitor, Moon, PanelLeft, Settings, Sun } from "lucide-react";
 
 /* ============================================================
  *  工作台外壳 — 借鉴 DeepSeek Harness 侧边栏设计
- *  - CSS-grid 三列布局，sidebar 列宽通过 gridTemplateColumns 过渡
+ *  - CSS-grid 两列布局，sidebar 列宽通过 gridTemplateColumns 过渡
  *  - 侧边栏两态：
  *      折叠 (rail)  = 56px 纯图标列
  *      展开 (wide)  = 可拖拽调宽，默认 264px（clamp 232–360）
- *  - 结构：品牌行 → 新建按钮 → 导航列表(flex:1) → 底部设置
+ *  - 结构：品牌行 → 导航列表(flex:1) → 底部设置
  *  - 拖拽手柄：col-resize 8px 覆盖条
+ *  - 设置为内联视图，点底部"设置"切到设置页，不弹窗
  * ============================================================ */
 
-type ViewId = "calculator" | "console";
-
-interface NavItem {
-  id: ViewId;
-  title: string;
-  subtitle: string;
-  glyph: "calc" | "console";
-}
-
-const NAV: NavItem[] = [
-  { id: "calculator", title: "计算器",    subtitle: "标准",     glyph: "calc" },
-  { id: "console",    title: "运行控制台", subtitle: "平台运行时", glyph: "console" },
-];
+type View = "workbench" | "settings";
+type ThemeMode = "system" | "light" | "dark";
 
 const RAIL_WIDTH = 56;
 const MIN_WIDE = 232;
@@ -43,10 +24,24 @@ function clamp(v: number, lo: number, hi: number) {
 }
 
 export default function App() {
-  const [view, setView] = useState<ViewId>("calculator");
+  const [view, setView] = useState<View>("workbench");
   const [collapsed, setCollapsed] = useState(false);
   const [wideWidth, setWideWidth] = useState(264);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    return (localStorage.getItem("theme") as ThemeMode) || "system";
+  });
+
+  // ---- 主题应用 ----
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "system") {
+      delete root.dataset.theme;
+      localStorage.removeItem("theme");
+    } else {
+      root.dataset.theme = theme;
+      localStorage.setItem("theme", theme);
+    }
+  }, [theme]);
 
   // ---- 拖拽调宽 ----
   const draggingRef = useRef(false);
@@ -57,21 +52,16 @@ export default function App() {
     e.preventDefault();
     draggingRef.current = true;
     dragStartX.current = e.clientX;
-    dragStartWidth.current = collapsed ? wideWidth : wideWidth;
+    dragStartWidth.current = wideWidth;
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
-  }, [collapsed, wideWidth]);
+  }, [wideWidth]);
 
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
       if (!draggingRef.current) return;
       const dx = e.clientX - dragStartX.current;
-      const next = clamp(dragStartWidth.current + dx, MIN_WIDE, MAX_WIDE);
-      setWideWidth(next);
-      // 拖到 rail 宽度以下自动折叠（但保持 wideWidth 以便展开恢复）
-      if (next <= MIN_WIDE && dx < 0) {
-        // 不自动折叠，让用户用按钮折叠
-      }
+      setWideWidth(clamp(dragStartWidth.current + dx, MIN_WIDE, MAX_WIDE));
     };
     const onUp = () => {
       if (!draggingRef.current) return;
@@ -108,55 +98,61 @@ export default function App() {
               type="button"
               className="sidebar-brand"
               title="Platform"
-              onClick={() => setView("calculator")}
+              onClick={() => setView("workbench")}
             >
               <span className="sidebar-brand-mark">P</span>
               <span className="sidebar-brand-name">Platform</span>
             </button>
           )}
           {collapsed && (
-            <span className="sidebar-brand-mark" title="Platform">P</span>
+            <>
+              <span className="sidebar-brand-mark" title="Platform">P</span>
+              <button
+                type="button"
+                className="sidebar-toggle sidebar-toggle-rail"
+                aria-label="展开侧边栏"
+                title="展开侧边栏"
+                onClick={toggleSidebar}
+              >
+                <PanelLeft size={18} strokeWidth={1.6} />
+              </button>
+            </>
           )}
-          <button
-            type="button"
-            className="sidebar-toggle"
-            aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"}
-            title={collapsed ? "展开侧边栏" : "收起侧边栏"}
-            onClick={toggleSidebar}
-          >
-            <PanelLeft size={collapsed ? 18 : 16} strokeWidth={1.6} />
-          </button>
+          {!collapsed && (
+            <button
+              type="button"
+              className="sidebar-toggle"
+              aria-label="收起侧边栏"
+              title="收起侧边栏"
+              onClick={toggleSidebar}
+            >
+              <PanelLeft size={16} strokeWidth={1.6} />
+            </button>
+          )}
         </div>
 
         {/* ---- 导航列表 ---- */}
         <div className="sidebar-region" role="navigation">
-          {!collapsed && <div className="sidebar-section-label">工具</div>}
           <ul className="sidebar-nav-list">
-            {NAV.map((n) => {
-              const selected = view === n.id;
-              const Icon = n.glyph === "calc" ? CalcIcon : Radio;
-              return (
-                <li key={n.id}>
-                  <button
-                    type="button"
-                    className={"sidebar-nav-item" + (selected ? " is-selected" : "")}
-                    title={n.title}
-                    aria-current={selected ? "page" : undefined}
-                    onClick={() => setView(n.id)}
-                  >
-                    <span className="sidebar-nav-icon">
-                      <Icon size={18} strokeWidth={1.6} />
-                    </span>
-                    {!collapsed && (
-                      <span className="sidebar-nav-text">
-                        <span className="sidebar-nav-title">{n.title}</span>
-                        <span className="sidebar-nav-sub">{n.subtitle}</span>
-                      </span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
+            <li>
+              <button
+                type="button"
+                className={"sidebar-nav-item" + (view === "workbench" ? " is-selected" : "")}
+                title="工作台"
+                aria-current={view === "workbench" ? "page" : undefined}
+                onClick={() => setView("workbench")}
+              >
+                <span className="sidebar-nav-icon">
+                  <LayoutGrid size={18} strokeWidth={1.6} />
+                </span>
+                {!collapsed && (
+                  <span className="sidebar-nav-text">
+                    <span className="sidebar-nav-title">工作台</span>
+                    <span className="sidebar-nav-sub">起始页</span>
+                  </span>
+                )}
+              </button>
+            </li>
           </ul>
         </div>
 
@@ -164,12 +160,11 @@ export default function App() {
         <div className="sidebar-foot">
           <button
             type="button"
-            className={"sidebar-settings-btn" + (settingsOpen ? " is-active" : "")}
+            className={"sidebar-settings-btn" + (view === "settings" ? " is-active" : "")}
             title="设置"
             aria-label="设置"
-            aria-haspopup="dialog"
-            aria-expanded={settingsOpen}
-            onClick={() => setSettingsOpen((v) => !v)}
+            aria-current={view === "settings" ? "page" : undefined}
+            onClick={() => setView("settings")}
           >
             <Settings size={collapsed ? 18 : 16} strokeWidth={1.6} />
             {!collapsed && <span className="sidebar-settings-label">设置</span>}
@@ -189,52 +184,118 @@ export default function App() {
 
       {/* ============ 主区 ============ */}
       <div className="sidebar-center-col">
-        {view === "calculator" ? (
-          <Calculator onToggleNav={toggleSidebar} />
+        {view === "workbench" ? (
+          <div className="workbench workbench-empty">
+            <div className="empty-hero">
+              <div className="empty-hero-icon">
+                <LayoutGrid size={28} strokeWidth={1.4} />
+              </div>
+              <h2>工作台已就绪</h2>
+              <p>这是一个空白模板。在此添加你的工具视图与业务逻辑。</p>
+            </div>
+          </div>
         ) : (
-          <Console onToggleNav={toggleSidebar} />
-        )}
-      </div>
-
-      {/* ============ 设置浮层 ============ */}
-      {settingsOpen && (
-        <div className="settings-overlay" role="dialog" aria-modal="true" aria-label="设置">
-          <button
-            type="button"
-            className="settings-mask"
-            aria-label="关闭设置"
-            onClick={() => setSettingsOpen(false)}
-          />
-          <div className="settings-panel">
-            <div className="settings-header">
-              <span className="settings-title">设置</span>
+          <div className="workbench settings-view">
+            <header className="settings-view-header">
               <button
                 type="button"
-                className="settings-close"
-                aria-label="关闭"
-                onClick={() => setSettingsOpen(false)}
+                className="settings-view-back"
+                aria-label="返回工作台"
+                title="返回工作台"
+                onClick={() => setView("workbench")}
               >
-                <X size={15} strokeWidth={1.6} />
+                <ArrowLeft size={18} strokeWidth={1.6} />
               </button>
-            </div>
-            <div className="settings-body">
-              <div className="settings-section">
-                <div className="settings-section-title">常规</div>
-                <div className="settings-row">
-                  <span>侧边栏默认宽度</span>
-                  <span className="settings-row-value">{wideWidth}px</span>
-                </div>
-                <div className="settings-row">
-                  <span>默认视图</span>
-                  <span className="settings-row-value">
-                    {view === "calculator" ? "计算器" : "运行控制台"}
-                  </span>
-                </div>
+              <h2 className="settings-view-title">设置</h2>
+            </header>
+            <div className="settings-view-body">
+              <div className="settings-scroll">
+                {/* ---- 外观卡片 ---- */}
+                <section className="settings-card">
+                  <div className="settings-card-head">
+                    <span className="settings-card-icon"><Sun size={16} strokeWidth={1.6} /></span>
+                    <div className="settings-card-meta">
+                      <span className="settings-card-title">外观</span>
+                      <span className="settings-card-desc">主题与侧边栏布局</span>
+                    </div>
+                  </div>
+                  <div className="settings-card-body">
+                    <div className="settings-field">
+                      <div className="settings-field-label">主题模式</div>
+                      <div className="theme-segmented" role="radiogroup" aria-label="主题">
+                        {([
+                          { id: "system", label: "跟随系统", icon: <Monitor size={15} strokeWidth={1.6} /> },
+                          { id: "light", label: "浅色", icon: <Sun size={15} strokeWidth={1.6} /> },
+                          { id: "dark", label: "暗色", icon: <Moon size={15} strokeWidth={1.6} /> },
+                        ] as const).map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            className={"theme-option" + (theme === opt.id ? " is-selected" : "")}
+                            role="radio"
+                            aria-checked={theme === opt.id}
+                            onClick={() => setTheme(opt.id)}
+                          >
+                            {opt.icon}
+                            <span>{opt.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="settings-field">
+                      <div className="settings-field-label">
+                        <span>侧边栏宽度</span>
+                        <span className="settings-field-value">{wideWidth}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        className="settings-range"
+                        min={MIN_WIDE}
+                        max={MAX_WIDE}
+                        step={1}
+                        value={wideWidth}
+                        onChange={(e) => setWideWidth(Number(e.target.value))}
+                        aria-label="侧边栏宽度"
+                      />
+                      <div className="settings-range-ticks">
+                        <span>窄</span>
+                        <span>宽</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* ---- 关于卡片 ---- */}
+                <section className="settings-card">
+                  <div className="settings-card-head">
+                    <span className="settings-card-icon"><LayoutGrid size={16} strokeWidth={1.6} /></span>
+                    <div className="settings-card-meta">
+                      <span className="settings-card-title">关于</span>
+                      <span className="settings-card-desc">模板信息</span>
+                    </div>
+                  </div>
+                  <div className="settings-card-body">
+                    <dl className="settings-kv">
+                      <div className="settings-kv-row">
+                        <dt>名称</dt>
+                        <dd>Platform Runtime Template</dd>
+                      </div>
+                      <div className="settings-kv-row">
+                        <dt>版本</dt>
+                        <dd>0.1.0</dd>
+                      </div>
+                      <div className="settings-kv-row">
+                        <dt>技术栈</dt>
+                        <dd>Python · FastAPI · React · Vite</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </section>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

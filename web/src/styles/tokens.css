@@ -49,3 +49,76 @@
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
 }
+
+/* ---- Fluent surfaces (Windows 11 dark) ----
+ * 跟随系统：仅当未手动指定主题时生效 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --canvas: #1f1f1f;
+    --surface: #2b2b2b;
+    --surface-raised: #323232;
+    --surface-sunken: #383838;
+    --surface-fill: #404040;
+
+    --ink: #ffffff;
+    --ink-soft: #c8c8c8;
+    --muted: #9a9a9a;
+    --faint: #6e6e6e;
+
+    --line: #404040;
+    --line-strong: #5a5a5a;
+
+    --accent: #4cc2ff;
+    --accent-hover: #62ccff;
+    --accent-pressed: #38b4f0;
+    --accent-soft: #0a3340;
+    --accent-ink: #7fd4ff;
+
+    --green: #6ccb5f;
+    --green-soft: #1a3216;
+    --blue: #4cc2ff;
+    --blue-soft: #0a3340;
+    --amber: #ffd35c;
+    --amber-soft: #3a3010;
+    --rose: #ff99a4;
+    --rose-soft: #3d1818;
+
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* 手动指定暗色：无论系统设置如何都生效 */
+:root[data-theme="dark"] {
+  --canvas: #1f1f1f;
+  --surface: #2b2b2b;
+  --surface-raised: #323232;
+  --surface-sunken: #383838;
+  --surface-fill: #404040;
+
+  --ink: #ffffff;
+  --ink-soft: #c8c8c8;
+  --muted: #9a9a9a;
+  --faint: #6e6e6e;
+
+  --line: #404040;
+  --line-strong: #5a5a5a;
+
+  --accent: #4cc2ff;
+  --accent-hover: #62ccff;
+  --accent-pressed: #38b4f0;
+  --accent-soft: #0a3340;
+  --accent-ink: #7fd4ff;
+
+  --green: #6ccb5f;
+  --green-soft: #1a3216;
+  --blue: #4cc2ff;
+  --blue-soft: #0a3340;
+  --amber: #ffd35c;
+  --amber-soft: #3a3010;
+  --rose: #ff99a4;
+  --rose-soft: #3d1818;
+
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+}

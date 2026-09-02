@@ -35,7 +35,7 @@ from .errors import (
 )
 from .event_bus import InMemoryEventBus
 from .manifest import ToolDescriptor, ToolRegistry
-from .task import TaskContext
+from .task import TaskContext, TaskNotFoundError
 
 
 @dataclass(slots=True)
@@ -90,6 +90,10 @@ class JobRuntime:
     ) -> JobSnapshot:
         """Look up ``kind`` in the registry and start it on a background thread."""
         descriptor = self._registry.get(kind)
+        if descriptor.task is None:
+            raise TaskNotFoundError(
+                f"tool {kind!r} is not a runnable task (mode={descriptor.mode!r})"
+            )
         task = descriptor.task
         with self._lock:
             if self._active and not self._active.status.is_terminal:

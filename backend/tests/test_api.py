@@ -85,3 +85,16 @@ def test_websocket_initial_snapshot_and_reconnect_recovery() -> None:
             event["kind"] == "job_completed"
             for event in recovered["data"]["events"]
         )
+
+
+def test_tools_endpoint_returns_registered_descriptors() -> None:
+    client = TestClient(create_app())
+
+    response = client.get("/api/v1/tools")
+    assert response.status_code == 200
+    tools = response.json()["tools"]
+    assert isinstance(tools, list)
+    assert len(tools) >= 1
+    demo = next(t for t in tools if t["kind"] == "demo_long_task")
+    assert demo["title"]
+    assert demo["mode"] == "oneshot"
