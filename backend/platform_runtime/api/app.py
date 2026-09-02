@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from platform_runtime.application.calculator import CalculatorSession
 from platform_runtime.application.errors import (
     JobAlreadyRunningError,
     JobNotCancellableError,
@@ -14,7 +15,7 @@ from platform_runtime.application.errors import (
 from platform_runtime.application.job_runtime import JobRuntime
 from platform_runtime.application.lifecycle import LifecyclePolicy, WindowLifecycle
 
-from .routes import events, jobs, system
+from .routes import calc, events, jobs, system
 
 
 def create_app(
@@ -38,6 +39,7 @@ def create_app(
     )
 
     app.state.runtime = runtime or JobRuntime()
+    app.state.calc_session = CalculatorSession()
     app.state.window_lifecycle = WindowLifecycle(
         lifecycle_policy or LifecyclePolicy(),
         stop_active_job=_stop_active_job(app.state.runtime),
@@ -45,6 +47,7 @@ def create_app(
     app.include_router(system.router, prefix="/api/v1")
     app.include_router(jobs.router, prefix="/api/v1")
     app.include_router(events.router, prefix="/api/v1")
+    app.include_router(calc.router, prefix="/api/v1")
 
     if static_dir is not None:
         static_path = Path(static_dir)
