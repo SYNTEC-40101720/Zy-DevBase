@@ -41,7 +41,7 @@ platform_template/
 
 业务核心在 `domain` 和 `application`，不绑定 FastAPI 或 pywebview，可独立单元测试。换新业务时只改这两层，`api` / `desktop` / 前端骨架不动。
 
-> 架构借鉴自微软开源 Windows 计算器（`Microsoft/calculator`）：引擎在 `domain` 声明它需要的**端口**（对应其 `ICalcDisplay`/`IHistoryDisplay`），宿主在 `application` 实现；工具以**声明式清单**注册（对应其 `NavCategoryStates.CategoryManifest`），前端导航栏从清单渲染；用户可见字符串走**资源提供者**，逻辑内不硬编码本地化文本。
+> 架构思路借鉴自微软开源 Windows 计算器（`Microsoft/calculator`）的端口/清单模式：引擎在 `domain` 声明它需要的**端口**，宿主在 `application` 实现；工具以**声明式清单**注册（对应其 `NavCategoryStates.CategoryManifest`），前端导航栏从清单渲染；用户可见字符串走**资源提供者**，逻辑内不硬编码本地化文本。
 
 ### 前端骨架
 
@@ -117,12 +117,10 @@ Vite 开发服务器默认在 `http://localhost:5173`，会把 `/api` 和 WebSoc
 | POST | `/jobs/cancel` | 取消当前任务 |
 | WS | `/events` | 事件流（含重放） |
 | GET | `/tools` | 已注册工具清单（供前端导航渲染） |
-| GET | `/calc/state` | 计算器当前视图（参考实现） |
-| POST | `/calc/press` | 应用一次按键，返回新视图（参考实现） |
 
 运行时只允许一个非终态任务。任务通过后台线程执行，支持完成、取消、冲突检测和失败状态。事件总线合并相邻的同任务进度事件，重放历史默认最多 512 个事件；重连时以当前任务快照为权威状态。
 
-`/tools` 返回 `ToolRegistry` 中所有 `ToolDescriptor`，前端可据此渲染导航栏。`/calc/*` 是交互式工具的参考实现：`CalculatorSession` 是长生命周期会话，按键同步作用于引擎、即时返回视图，不经过 `JobRuntime` 与事件总线。
+`/tools` 返回 `ToolRegistry` 中所有 `ToolDescriptor`，前端可据此渲染导航栏。
 
 ## 扩展新工具
 

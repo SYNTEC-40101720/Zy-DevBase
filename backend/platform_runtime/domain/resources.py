@@ -45,9 +45,6 @@ class InMemoryResourceProvider:
         "demo.progress": "演示任务进度 {step}/{total}",
         "demo.completed": "演示任务已完成",
         "demo.cancelled": "任务已取消",
-        "calc.display_ready": "就绪",
-        "calc.error": "错误",
-        "calc.cleared": "已清除",
     }
 
     def __init__(self, table: dict[str, str] | None = None) -> None:

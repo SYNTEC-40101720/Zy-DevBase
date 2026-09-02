@@ -24,7 +24,7 @@ async def events(websocket: WebSocket) -> None:
                 "type": "health",
                 "data": {
                     "status": "ok",
-                    "service": "platform-runtime-template",
+                    "service": "zy",
                     "active_job_id": (
                         None
                         if initial_snapshot.job is None

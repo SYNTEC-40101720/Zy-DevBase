@@ -14,7 +14,7 @@ def health(
 ) -> HealthResponse:
     job = runtime.current_job()
     return HealthResponse(
-        service="platform-runtime-template",
+        service="zy",
         active_job_id=None if job is None else job.job_id,
         window_close_mode=request.app.state.window_lifecycle.policy.close_mode,
     )

@@ -201,15 +201,10 @@ code {
 .sidebar-brand-mark {
   display: inline-flex;
   flex: none;
-  justify-content: center;
-  align-items: center;
-  width: 24px;
-  height: 24px;
-  color: #fff;
-  background: var(--accent);
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-weight: 700;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: contain;
 }
 
 .sidebar-brand-name {

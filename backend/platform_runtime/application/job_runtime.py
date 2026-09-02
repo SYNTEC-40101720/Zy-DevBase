@@ -5,11 +5,10 @@ thread. Tools are looked up by ``kind`` in a :class:`ToolRegistry` — new
 tools register a :class:`ToolDescriptor` (title, group, glyph, task) at
 startup without touching the runtime, the API, or the desktop layer.
 
-Borrowed from Microsoft Calculator: the engine (CalcManager) declares
-ports (``ICalcDisplay``/``IHistoryDisplay``) and the host implements them;
-here :class:`TaskContext` implements :class:`ProgressSink` and is the only
-thing a task body sees. User-facing strings flow through a
-:class:`ResourceProvider` so logic never hard-codes localization.
+The runtime follows the ports pattern: :class:`TaskContext` implements
+:class:`ProgressSink` and is the only thing a task body sees.
+User-facing strings flow through a :class:`ResourceProvider` so logic
+never hard-codes localization.
 
 Demo tool (``demo_long_task``) is registered by default so the template
 works out of the box.
