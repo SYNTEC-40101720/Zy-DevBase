@@ -13,8 +13,8 @@ from urllib.request import urlopen
 import uvicorn
 from fastapi import FastAPI
 
-from zy_devbase.api.app import create_app
-from zy_devbase.application.lifecycle import (
+from devbase.api.app import create_app
+from devbase.application.lifecycle import (
     LifecyclePolicy,
     WindowCloseMode,
 )
@@ -94,7 +94,7 @@ def run_desktop(
     port: int = 8000,
     close_mode: WindowCloseMode = WindowCloseMode.STOP_ON_CLOSE,
     *,
-    window_title: str = "Zy",
+    window_title: str = "DevBase",
     window_width: int = 1280,
     window_height: int = 800,
     readiness_timeout: float = 10.0,
@@ -124,7 +124,7 @@ def run_desktop(
     stop_event = Event()
     server_thread = Thread(
         target=server.run,
-        name="zy-devbase-api-server",
+        name="devbase-api-server",
         daemon=True,
     )
 

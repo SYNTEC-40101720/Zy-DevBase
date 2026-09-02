@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from threading import Condition, RLock
 from time import monotonic
 
-from zy_devbase.domain.events import EventKind, RuntimeEvent
+from devbase.domain.events import EventKind, RuntimeEvent
 
 
 @dataclass(frozen=True, slots=True)

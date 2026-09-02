@@ -1,6 +1,6 @@
 from fastapi import Request
 
-from zy_devbase.application.job_runtime import JobRuntime
+from devbase.application.job_runtime import JobRuntime
 
 
 def get_runtime(request: Request) -> JobRuntime:

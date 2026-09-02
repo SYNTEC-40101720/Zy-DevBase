@@ -6,13 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from zy_devbase.application.errors import (
+from devbase.application.errors import (
     JobAlreadyRunningError,
     JobNotCancellableError,
     NoCurrentJobError,
 )
-from zy_devbase.application.job_runtime import JobRuntime
-from zy_devbase.application.lifecycle import LifecyclePolicy, WindowLifecycle
+from devbase.application.job_runtime import JobRuntime
+from devbase.application.lifecycle import LifecyclePolicy, WindowLifecycle
 
 from .routes import events, jobs, system, tools
 
@@ -23,7 +23,7 @@ def create_app(
     lifecycle_policy: LifecyclePolicy | None = None,
 ) -> FastAPI:
     app = FastAPI(
-        title="Zy",
+        title="DevBase",
         version="0.1.0",
     )
     app.add_middleware(

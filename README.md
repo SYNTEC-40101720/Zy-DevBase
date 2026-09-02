@@ -1,4 +1,4 @@
-# Zy_DevBase
+# DevBase
 
 Windows 本地桌面工具的基础项目骨架。复制即可开新工具，不用从零搭起。
 
@@ -14,11 +14,11 @@ Windows 本地桌面工具的基础项目骨架。复制即可开新工具，不
 ## 目录结构
 
 ```text
-Zy_DevBase/
+DevBase/
 ├─ main.py                 # 启动入口：桌面 / 浏览器双模式
 ├─ backend/
 │  ├─ pyproject.toml
-│  ├─ zy_devbase/
+│  ├─ DevBase/
 │  │  ├─ domain/           # 任务状态机、领域事件（零 web 依赖）
 │  │  ├─ application/       # 内存运行时、事件总线、生命周期策略
 │  │  ├─ api/              # /api/v1 HTTP 与 WebSocket
