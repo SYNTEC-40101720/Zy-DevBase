@@ -2,15 +2,15 @@ from threading import Event
 
 import pytest
 
-from platform_runtime.api.app import create_app
-from platform_runtime.application.job_runtime import JobRuntime
-from platform_runtime.application.lifecycle import WindowCloseMode
-from platform_runtime.desktop import launcher
-from platform_runtime.desktop.launcher import (
+from zy_devbase.api.app import create_app
+from zy_devbase.application.job_runtime import JobRuntime
+from zy_devbase.application.lifecycle import WindowCloseMode
+from zy_devbase.desktop import launcher
+from zy_devbase.desktop.launcher import (
     DesktopDependencyError,
     run_desktop,
 )
-from platform_runtime.domain.job import JobStatus
+from zy_devbase.domain.job import JobStatus
 
 
 class FakeServer:

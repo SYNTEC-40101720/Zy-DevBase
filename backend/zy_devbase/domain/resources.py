@@ -6,7 +6,7 @@ are resolved through a provider. The template ships an in-process Chinese
 table; a real deployment can swap in a locale-aware provider without
 touching domain/application logic.
 
-    from platform_runtime.domain.resources import ResourceProvider, get_default
+    from zy_devbase.domain.resources import ResourceProvider, get_default
 
     provider = get_default()
     msg = provider.string("job.queued", kind="demo")  # -> "任务已排队: demo"

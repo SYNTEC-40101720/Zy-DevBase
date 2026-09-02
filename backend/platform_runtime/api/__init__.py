@@ -1,1 +1,0 @@
-"""HTTP and WebSocket API for the platform runtime template."""

@@ -2,16 +2,16 @@ from time import monotonic, sleep
 
 import pytest
 
-from platform_runtime.application.errors import JobAlreadyRunningError
-from platform_runtime.application.event_bus import InMemoryEventBus
-from platform_runtime.application.job_runtime import JobRuntime
-from platform_runtime.application.lifecycle import (
+from zy_devbase.application.errors import JobAlreadyRunningError
+from zy_devbase.application.event_bus import InMemoryEventBus
+from zy_devbase.application.job_runtime import JobRuntime
+from zy_devbase.application.lifecycle import (
     LifecyclePolicy,
     WindowCloseMode,
     WindowLifecycle,
 )
-from platform_runtime.domain.events import EventKind, RuntimeEvent
-from platform_runtime.domain.job import JobStatus
+from zy_devbase.domain.events import EventKind, RuntimeEvent
+from zy_devbase.domain.job import JobStatus
 
 
 def wait_for_status(runtime: JobRuntime, expected: JobStatus) -> None:
