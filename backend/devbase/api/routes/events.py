@@ -3,7 +3,7 @@ from contextlib import suppress
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from zy_devbase.api.schemas import event_response, snapshot_response
+from devbase.api.schemas import event_response, snapshot_response
 
 router = APIRouter(tags=["events"])
 
@@ -24,7 +24,7 @@ async def events(websocket: WebSocket) -> None:
                 "type": "health",
                 "data": {
                     "status": "ok",
-                    "service": "zy",
+                    "service": "devbase",
                     "active_job_id": (
                         None
                         if initial_snapshot.job is None

@@ -23,9 +23,9 @@ from threading import Event, RLock, Thread
 from typing import Any
 from uuid import uuid4
 
-from zy_devbase.domain.events import EventKind, RuntimeEvent
-from zy_devbase.domain.job import JobSnapshot, JobStatus, RuntimeSnapshot
-from zy_devbase.domain.resources import ResourceProvider, get_default
+from devbase.domain.events import EventKind, RuntimeEvent
+from devbase.domain.job import JobSnapshot, JobStatus, RuntimeSnapshot
+from devbase.domain.resources import ResourceProvider, get_default
 
 from .errors import (
     JobAlreadyRunningError,

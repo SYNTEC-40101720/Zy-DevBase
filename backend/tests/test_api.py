@@ -3,10 +3,10 @@ from time import monotonic, sleep
 
 from fastapi.testclient import TestClient
 
-from zy_devbase.api.app import create_app
-from zy_devbase.application.job_runtime import JobRuntime
-from zy_devbase.application.lifecycle import LifecyclePolicy, WindowCloseMode
-from zy_devbase.domain.job import JobStatus
+from devbase.api.app import create_app
+from devbase.application.job_runtime import JobRuntime
+from devbase.application.lifecycle import LifecyclePolicy, WindowCloseMode
+from devbase.domain.job import JobStatus
 
 
 def wait_for_terminal(runtime: JobRuntime) -> None:
@@ -27,7 +27,7 @@ def test_static_frontend_does_not_mask_api(tmp_path: Path) -> None:
     assert client.get("/").status_code == 200
     assert client.get("/").text == "<html>template</html>"
     assert client.get("/api/v1/health").status_code == 200
-    assert client.get("/api/v1/health").json()["service"] == "zy"
+    assert client.get("/api/v1/health").json()["service"] == "devbase"
 
 
 def test_health_reports_window_close_mode() -> None:

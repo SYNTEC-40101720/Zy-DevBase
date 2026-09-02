@@ -3,7 +3,7 @@
 A tool plugs its own logic into the runtime by registering a ``Task``
 callable. It never touches ``JobRuntime`` or the API/desktop layers.
 
-    from zy_devbase.application.task import TaskContext, TaskRegistry
+    from devbase.application.task import TaskContext, TaskRegistry
 
     def my_task(ctx: TaskContext) -> dict:
         for i in range(10):

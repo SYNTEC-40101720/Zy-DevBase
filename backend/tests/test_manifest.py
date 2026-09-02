@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import threading
 
-from zy_devbase.application.manifest import ToolDescriptor, ToolRegistry
-from zy_devbase.application.task import TaskContext, TaskNotFoundError
-from zy_devbase.domain.ports import ProgressSink
-from zy_devbase.domain.resources import InMemoryResourceProvider, get_default
+from devbase.application.manifest import ToolDescriptor, ToolRegistry
+from devbase.application.task import TaskContext, TaskNotFoundError
+from devbase.domain.ports import ProgressSink
+from devbase.domain.resources import InMemoryResourceProvider, get_default
 
 
 def _ctx() -> TaskContext:

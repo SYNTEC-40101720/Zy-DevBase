@@ -98,16 +98,16 @@ export default function App() {
             <button
               type="button"
               className="sidebar-brand"
-              title="Zy"
+              title="DevBase"
               onClick={() => setView("workbench")}
             >
-              <img className="sidebar-brand-mark" src={appLogo} alt="Zy" />
-              <span className="sidebar-brand-name">Zy</span>
+              <img className="sidebar-brand-mark" src={appLogo} alt="DevBase" />
+              <span className="sidebar-brand-name">DevBase</span>
             </button>
           )}
           {collapsed && (
             <>
-              <img className="sidebar-brand-mark" src={appLogo} alt="Zy" title="Zy" />
+              <img className="sidebar-brand-mark" src={appLogo} alt="DevBase" title="DevBase" />
               <button
                 type="button"
                 className="sidebar-toggle sidebar-toggle-rail"
@@ -279,7 +279,7 @@ export default function App() {
                     <dl className="settings-kv">
                       <div className="settings-kv-row">
                         <dt>名称</dt>
-                        <dd>Zy</dd>
+                        <dd>DevBase</dd>
                       </div>
                       <div className="settings-kv-row">
                         <dt>版本</dt>

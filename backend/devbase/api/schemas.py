@@ -3,10 +3,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel
 
-from zy_devbase.application.lifecycle import WindowCloseMode
-from zy_devbase.application.manifest import ToolDescriptor
-from zy_devbase.domain.events import EventKind, RuntimeEvent
-from zy_devbase.domain.job import JobSnapshot, JobStatus, RuntimeSnapshot
+from devbase.application.lifecycle import WindowCloseMode
+from devbase.application.manifest import ToolDescriptor
+from devbase.domain.events import EventKind, RuntimeEvent
+from devbase.domain.job import JobSnapshot, JobStatus, RuntimeSnapshot
 
 
 class HealthResponse(BaseModel):

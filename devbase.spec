@@ -1,13 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec for the Zy_DevBase desktop application.
+"""PyInstaller spec for the Syntec_DevBase desktop application.
 
 Builds an onedir (single folder) distribution containing:
   * main.py as the entry point
-  * the zy_devbase backend package
+  * the devbase backend package
   * the prebuilt web/dist frontend (served as static files)
 
 Run from the project root:
-    & backend\.venv\Scripts\python.exe -m PyInstaller zy_devbase.spec --noconfirm
+    & backend\.venv\Scripts\python.exe -m PyInstaller devbase.spec --noconfirm
 """
 
 from pathlib import Path
@@ -31,8 +31,8 @@ a = Analysis(
         "clr_loader",
         "pythonnet",
         # backend modules loaded dynamically at runtime
-        "zy_devbase.desktop.launcher",
-        "zy_devbase.api.app",
+        "devbase.desktop.launcher",
+        "devbase.api.app",
         # uvicorn parts pulled in via factory string
         "uvicorn.logging",
         "uvicorn.loops",
@@ -66,7 +66,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="Zy_DevBase",
+    name="Syntec_DevBase",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -78,7 +78,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=None,
-    # version="version_info.txt",
+    version="version_info.txt",
 )
 
 coll = COLLECT(
@@ -89,5 +89,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name="Zy_DevBase",
+    name="Syntec_DevBase",
 )

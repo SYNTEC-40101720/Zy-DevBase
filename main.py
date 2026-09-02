@@ -1,4 +1,4 @@
-"""Zy_DevBase backend entry point."""
+"""devbase backend entry point."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def _default_port() -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Start the Zy_DevBase local web application."
+        description="Start the devbase local web application."
     )
     parser.add_argument(
         "--host",
@@ -143,7 +143,7 @@ def main() -> None:
     if not args.browser:
         from importlib import import_module
 
-        desktop_launcher = import_module("zy_devbase.desktop.launcher")
+        desktop_launcher = import_module("devbase.desktop.launcher")
 
         try:
             desktop_launcher.run_desktop(
@@ -166,13 +166,13 @@ def main() -> None:
         browser_thread = threading.Thread(
             target=_open_browser_when_ready,
             args=(args.host, args.port, stop_event),
-            name="zy-devbase-browser-opener",
+            name="devbase-browser-opener",
         )
         browser_thread.start()
 
     try:
         uvicorn.run(
-            "zy_devbase.api.app:create_app_from_environment",
+            "devbase.api.app:create_app_from_environment",
             factory=True,
             host=args.host,
             port=args.port,

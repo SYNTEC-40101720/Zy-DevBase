@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends
 
-from zy_devbase.api.dependencies import get_runtime
-from zy_devbase.api.schemas import (
+from devbase.api.dependencies import get_runtime
+from devbase.api.schemas import (
     JobResponse,
     SnapshotResponse,
     StartJobRequest,
     snapshot_response,
 )
-from zy_devbase.application.job_runtime import JobRuntime
-from zy_devbase.application.task import TaskNotFoundError
+from devbase.application.job_runtime import JobRuntime
+from devbase.application.task import TaskNotFoundError
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
