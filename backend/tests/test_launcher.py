@@ -172,6 +172,38 @@ class TestWaitForServerReady:
             is True
         )
 
+    def test_readiness_request_carries_local_token(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        class FakeResponse:
+            status = 200
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        captured = {}
+
+        def fake_urlopen(request, timeout):
+            captured["token"] = request.headers["X-local-token"]
+            return FakeResponse()
+
+        monkeypatch.setattr(main_module, "urlopen", fake_urlopen)
+        stop = Event()
+
+        assert (
+            main_module._wait_for_server_ready(
+                "example.local",
+                8000,
+                stop,
+                token="local-token",
+            )
+            is True
+        )
+        assert captured["token"] == "local-token"
+
     def test_timeout_returns_false(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

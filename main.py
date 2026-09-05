@@ -12,7 +12,7 @@ from pathlib import Path
 from time import monotonic
 from urllib.error import URLError
 from urllib.parse import urlencode
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -102,6 +102,7 @@ def _wait_for_server_ready(
     port: int,
     stop_event: threading.Event,
     timeout: float = 10.0,
+    token: str | None = None,
 ) -> bool:
     health_url = (
         f"http://{_format_url_host(host)}:{port}/api/v1/health"
@@ -113,7 +114,9 @@ def _wait_for_server_ready(
         if remaining <= 0:
             return False
         try:
-            with urlopen(health_url, timeout=min(0.5, remaining)) as response:
+            headers = {"X-Local-Token": token} if token else {}
+            request = Request(health_url, headers=headers)
+            with urlopen(request, timeout=min(0.5, remaining)) as response:
                 if response.status == 200:
                     return True
         except (OSError, URLError):
@@ -128,7 +131,7 @@ def _open_browser_when_ready(
     stop_event: threading.Event,
     token: str | None = None,
 ) -> None:
-    if _wait_for_server_ready(host, port, stop_event):
+    if _wait_for_server_ready(host, port, stop_event, token=token):
         webbrowser.open(_browser_url(host, port, token))
     elif not stop_event.is_set():
         print("服务未及时就绪，未自动打开浏览器。", file=sys.stderr)

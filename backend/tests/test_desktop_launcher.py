@@ -72,6 +72,38 @@ def test_missing_pywebview_has_installation_guidance(monkeypatch) -> None:
     assert "[test,desktop]" in str(error.value)
 
 
+def test_desktop_readiness_request_carries_local_token(monkeypatch) -> None:
+    class FakeResponse:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    class AliveThread:
+        def is_alive(self):
+            return True
+
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["token"] = request.headers["X-local-token"]
+        return FakeResponse()
+
+    monkeypatch.setattr(launcher, "urlopen", fake_urlopen)
+
+    assert launcher._wait_for_server_ready(
+        "example.local",
+        8000,
+        AliveThread(),
+        Event(),
+        token="local-token",
+    ) is True
+    assert captured["token"] == "local-token"
+
+
 def test_desktop_configures_window_and_stops_cancelled_job(tmp_path) -> None:
     runtime = JobRuntime(total_steps=100, step_delay=0.02)
     webview = FakeWebview()

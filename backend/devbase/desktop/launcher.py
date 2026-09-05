@@ -9,7 +9,7 @@ from time import monotonic
 from typing import Any
 from urllib.error import URLError
 from urllib.parse import urlencode
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 import uvicorn
 from fastapi import FastAPI
@@ -71,6 +71,7 @@ def _wait_for_server_ready(
     server_thread: Thread,
     stop_event: Event,
     timeout: float = 10.0,
+    token: str | None = None,
 ) -> bool:
     health_url = (
         f"http://{_format_url_host(host)}:{port}/api/v1/health"
@@ -84,7 +85,9 @@ def _wait_for_server_ready(
         if remaining <= 0:
             return False
         try:
-            with urlopen(health_url, timeout=min(0.5, remaining)) as response:
+            headers = {"X-Local-Token": token} if token else {}
+            request = Request(health_url, headers=headers)
+            with urlopen(request, timeout=min(0.5, remaining)) as response:
                 if response.status == 200:
                     return True
         except (OSError, URLError):
@@ -164,7 +167,17 @@ def run_desktop(
 
     server_thread.start()
     try:
-        waiter = readiness_waiter or _wait_for_server_ready
+        waiter = readiness_waiter or (
+            lambda ready_host, ready_port, ready_thread, ready_stop, ready_timeout:
+            _wait_for_server_ready(
+                ready_host,
+                ready_port,
+                ready_thread,
+                ready_stop,
+                ready_timeout,
+                token=app.state.local_token,
+            )
+        )
         if not waiter(
             host,
             port,
