@@ -29,14 +29,7 @@
 - [x] 任务 15（GitHub Release 自动更新）已完成核心实现、测试和更新 SOP
 - [x] P0-P3 基础升级任务已实施；真实 GitHub Release 和干净域控替换冒烟仍需发布环境执行
 
-当前未提交改动：
-
-- `backend/devbase/api/app.py`
-- `backend/devbase/api/dependencies.py`
-- `backend/devbase/api/routes/events.py`
-- `backend/devbase/api/routes/jobs.py`
-- `backend/devbase/api/routes/system.py`
-- `backend/devbase/api/routes/tools.py`
+当前未提交改动：无。
 
 ## 开始前
 
@@ -365,7 +358,7 @@ npm run build
 - [x] DevBase 中没有发票业务名称、税号、邮箱、AI provider 或发票页面
 - [x] README 目录结构、启动方式、API 和扩展说明已同步
 - [x] `DEVBASE_UPGRADE_TASKS.md` 的复选框与实际状态一致
-- [ ] 仅在全部验证通过后提交和推送
+- [x] 仅在全部验证通过后提交和推送
 
 ## 发票项目后续适配边界
 
