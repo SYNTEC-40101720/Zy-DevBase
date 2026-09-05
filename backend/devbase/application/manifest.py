@@ -51,6 +51,10 @@ class ToolDescriptor:
     supports_input: bool = False
     mode: str = "oneshot"
     subtitle: str | None = None
+    # Pipeline chaining: when this kind succeeds (SUCCEEDED or
+    # COMPLETED_WITH_WARNINGS), the runtime auto-starts ``next_kind``.
+    # Empty/None means no chaining (standalone oneshot).
+    next_kind: str | None = None
     # Optional opaque config the task may read at call time (e.g. limits).
     config: dict[str, Any] = field(default_factory=dict, hash=False, compare=False)
 

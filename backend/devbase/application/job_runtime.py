@@ -116,6 +116,10 @@ class JobRuntime:
         Thread(
             target=self._run_task,
             args=(job.job_id, task, input or {}),
+            kwargs={
+                "kind": kind,
+                "next_kind": descriptor.next_kind,
+            },
             name=f"platform-{kind}-{job.job_id[:8]}",
             daemon=True,
         ).start()
@@ -184,6 +188,9 @@ class JobRuntime:
         job_id: str,
         task: object,
         input: dict[str, Any],
+        *,
+        kind: str = "",
+        next_kind: str | None = None,
     ) -> None:
         try:
             with self._lock:
@@ -259,6 +266,32 @@ class JobRuntime:
                             progress=100,
                             message=result_message,
                         )
+
+            # Pipeline chaining: auto-start next_kind on success.
+            # Cancelled or failed jobs do not trigger the next stage.
+            if next_kind:
+                with self._lock:
+                    final_job = self._get_active_locked(job_id)
+                if (
+                    final_job is not None
+                    and final_job.status
+                    in (JobStatus.SUCCEEDED, JobStatus.COMPLETED_WITH_WARNINGS)
+                    and not final_job.cancellation_requested.is_set()
+                ):
+                    pipeline_input = input or {}
+                    if isinstance(result, dict):
+                        pipeline_output = result.get("output")
+                        if isinstance(pipeline_output, dict):
+                            merged = dict(pipeline_input)
+                            merged.update(pipeline_output)
+                            pipeline_input = merged
+                    try:
+                        self.start(
+                            next_kind,
+                            input=pipeline_input,
+                        )
+                    except (TaskNotFoundError, JobAlreadyRunningError):
+                        pass  # next kind not registered or still running; skip
         except Exception as exc:
             with self._lock:
                 job = self._get_active_locked(job_id)

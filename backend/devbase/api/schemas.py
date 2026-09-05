@@ -47,6 +47,7 @@ class ToolDescriptorResponse(BaseModel):
     access_key: str | None = None
     supports_input: bool = False
     mode: str = "oneshot"
+    next_kind: str | None = None
 
 
 class ToolListResponse(BaseModel):
@@ -82,6 +83,7 @@ def tool_descriptor_response(d: ToolDescriptor) -> ToolDescriptorResponse:
         access_key=d.access_key,
         supports_input=d.supports_input,
         mode=d.mode,
+        next_kind=d.next_kind,
     )
 
 

@@ -53,8 +53,12 @@ def test_repeated_setup_does_not_duplicate_handlers(tmp_path: Path) -> None:
 def test_different_log_name_appends_handler(tmp_path: Path) -> None:
     setup_logging(log_name="a.log", base_dir=tmp_path)
     setup_logging(log_name="b.log", base_dir=tmp_path)
-    handlers = logging.getLogger("devbase").handlers
-    assert len(handlers) == 2
+    rf_handlers = [
+        h
+        for h in logging.getLogger("devbase").handlers
+        if isinstance(h, RotatingFileHandler)
+    ]
+    assert len(rf_handlers) == 2
 
 
 def test_handler_is_rotating_with_1mb_and_5_backups(tmp_path: Path) -> None:

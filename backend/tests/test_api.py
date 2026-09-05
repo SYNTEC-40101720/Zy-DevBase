@@ -112,6 +112,46 @@ def test_websocket_initial_snapshot_and_reconnect_recovery() -> None:
         )
 
 
+def test_websocket_reconnect_recovers_missed_events() -> None:
+    """断线重连必须携带游标，不丢中间事件。
+
+    Issue #2 验收：WebSocket 重连时先发快照 + 从游标续推。
+    """
+    runtime = JobRuntime(total_steps=5, step_delay=0.01)
+    client = TestClient(create_app(runtime, local_token=TEST_TOKEN))
+
+    # 第一次连接：获取游标
+    with client.websocket_connect(
+        f"/api/v1/events?token={TEST_TOKEN}"
+    ) as ws:
+        ws.receive_json()  # health
+        snapshot = ws.receive_json()  # snapshot
+        cursor = snapshot["data"]["event_cursor"]
+
+    # 产生中间事件
+    started = client.post("/api/v1/jobs/start", headers=_auth_headers())
+    assert started.status_code == 201
+    job_id = started.json()["id"]
+
+    # 等任务完成
+    wait_for_terminal(runtime)
+
+    # 重连，携带游标参数 after=cursor
+    with client.websocket_connect(
+        f"/api/v1/events?token={TEST_TOKEN}&after={cursor}"
+    ) as ws:
+        ws.receive_json()  # health
+        recovered = ws.receive_json()  # snapshot
+        assert recovered["type"] == "snapshot"
+        events = recovered["data"]["events"]
+        # 游标之后应有 job_created, job_started, progress*, job_succeeded
+        kinds = [e["kind"] for e in events]
+        assert "job_created" in kinds
+        assert "job_succeeded" in kinds
+        assert events[-1]["kind"] == "job_succeeded"
+        assert recovered["data"]["job"]["status"] == JobStatus.SUCCEEDED.value
+
+
 def test_tools_endpoint_returns_registered_descriptors() -> None:
     client = TestClient(create_app(local_token=TEST_TOKEN))
 

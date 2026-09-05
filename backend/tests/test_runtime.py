@@ -223,3 +223,148 @@ def test_cancel_transitions_through_cancelling_to_cancelled() -> None:
     events = runtime.current_snapshot().events
     assert any(e.kind is EventKind.JOB_CANCELLING for e in events)
     assert events[-1].kind is EventKind.JOB_CANCELLED
+
+
+# ---------------------------------------------------------------------------
+# Issue #4: pipeline 链式串联
+# ---------------------------------------------------------------------------
+
+class TestPipelineChaining:
+    def test_pipeline_auto_starts_next_kind(self) -> None:
+        """pipeline 模式下，前一个 kind 成功后自动启动 next_kind。"""
+        from devbase.application.manifest import ToolDescriptor, ToolRegistry
+
+        def step_a(ctx) -> dict:
+            ctx.report_progress(1.0, "A done")
+            return {"message": "A completed", "output": {"data": "from_a"}}
+
+        def step_b(ctx) -> dict:
+            ctx.report_progress(1.0, "B done")
+            return {"message": "B completed"}
+
+        registry = ToolRegistry()
+        registry.register(
+            ToolDescriptor(
+                kind="pipeline_a",
+                title="Pipeline A",
+                group="pipeline",
+                glyph="play",
+                task=step_a,
+                next_kind="pipeline_b",
+            )
+        )
+        registry.register(
+            ToolDescriptor(
+                kind="pipeline_b",
+                title="Pipeline B",
+                group="pipeline",
+                glyph="play",
+                task=step_b,
+            )
+        )
+        runtime = JobRuntime(registry=registry, total_steps=2, step_delay=0.005)
+
+        runtime.start("pipeline_a", input={"initial": "value"})
+
+        # First job reaches SUCCEEDED, then pipeline_b auto-starts
+        wait_for_status(runtime, JobStatus.SUCCEEDED)
+        # pipeline_b should also reach SUCCEEDED
+        wait_for_status(runtime, JobStatus.SUCCEEDED)
+
+        # The active job should be pipeline_b
+        job = runtime.current_job()
+        assert job is not None
+        assert job.kind == "pipeline_b"
+
+        # Both job_created events should be in the event stream
+        events = runtime.current_snapshot().events
+        created_kinds = [e.job_id for e in events if e.kind is EventKind.JOB_CREATED]
+        assert len(created_kinds) == 2
+
+    def test_pipeline_cancel_does_not_trigger_next(self) -> None:
+        """取消的任务不应触发 pipeline 下一阶段。"""
+        from devbase.application.manifest import ToolDescriptor, ToolRegistry
+
+        def slow_task(ctx) -> dict:
+            while not ctx.is_cancelled():
+                import time
+
+                time.sleep(0.01)
+            return {"message": "cancelled"}
+
+        def should_not_run(ctx) -> dict:
+            return {"message": "should not be called"}
+
+        registry = ToolRegistry()
+        registry.register(
+            ToolDescriptor(
+                kind="pipeline_slow",
+                title="Pipeline Slow",
+                group="pipeline",
+                glyph="play",
+                task=slow_task,
+                next_kind="pipeline_next",
+            )
+        )
+        registry.register(
+            ToolDescriptor(
+                kind="pipeline_next",
+                title="Pipeline Next",
+                group="pipeline",
+                glyph="play",
+                task=should_not_run,
+            )
+        )
+        runtime = JobRuntime(registry=registry, total_steps=2, step_delay=0.005)
+
+        runtime.start("pipeline_slow")
+        runtime.cancel_current()
+        wait_for_status(runtime, JobStatus.CANCELLED)
+
+        # pipeline_next should NOT be started
+        job = runtime.current_job()
+        assert job is not None
+        assert job.kind == "pipeline_slow"
+        assert job.status is JobStatus.CANCELLED
+
+    def test_pipeline_passes_output_to_next_input(self) -> None:
+        """pipeline 模式下，前阶段 output 字段应传递到下一阶段 input。"""
+        from devbase.application.manifest import ToolDescriptor, ToolRegistry
+
+        captured: dict = {}
+
+        def producer(ctx) -> dict:
+            return {"output": {"produced_data": "hello"}}
+
+        def consumer(ctx) -> dict:
+            captured["job_kind"] = ctx.kind
+            return {"message": "consumed"}
+
+        registry = ToolRegistry()
+        registry.register(
+            ToolDescriptor(
+                kind="producer",
+                title="Producer",
+                group="pipeline",
+                glyph="play",
+                task=producer,
+                next_kind="consumer",
+            )
+        )
+        registry.register(
+            ToolDescriptor(
+                kind="consumer",
+                title="Consumer",
+                group="pipeline",
+                glyph="play",
+                task=consumer,
+            )
+        )
+        runtime = JobRuntime(registry=registry, total_steps=2, step_delay=0.005)
+
+        runtime.start("producer", input={"initial": "value"})
+        wait_for_status(runtime, JobStatus.SUCCEEDED)
+        wait_for_status(runtime, JobStatus.SUCCEEDED)
+
+        # consumer should have been called
+        assert captured.get("job_kind") == "consumer"
