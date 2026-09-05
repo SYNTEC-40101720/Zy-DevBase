@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from devbase.api.dependencies import get_runtime
+from devbase.api.dependencies import get_runtime, require_local_token
 from devbase.api.schemas import (
     JobResponse,
     SnapshotResponse,
@@ -10,7 +10,11 @@ from devbase.api.schemas import (
 from devbase.application.job_runtime import JobRuntime
 from devbase.application.task import TaskNotFoundError
 
-router = APIRouter(prefix="/jobs", tags=["jobs"])
+router = APIRouter(
+    prefix="/jobs",
+    tags=["jobs"],
+    dependencies=[Depends(require_local_token)],
+)
 
 
 @router.get("/current", response_model=SnapshotResponse)

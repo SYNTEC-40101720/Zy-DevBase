@@ -11,4 +11,5 @@ web/*.tsbuildinfo
 
 dist/
 build/
+release/
 .pkg_tmp/

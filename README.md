@@ -18,7 +18,7 @@ DevBase/
 ├─ main.py                 # 启动入口：桌面 / 浏览器双模式
 ├─ backend/
 │  ├─ pyproject.toml
-│  ├─ DevBase/
+│  ├─ devbase/
 │  │  ├─ domain/           # 任务状态机、领域事件（零 web 依赖）
 │  │  ├─ application/       # 内存运行时、事件总线、生命周期策略
 │  │  ├─ api/              # /api/v1 HTTP 与 WebSocket
@@ -115,25 +115,31 @@ Vite 开发服务器默认在 `http://localhost:5173`，会把 `/api` 和 WebSoc
 | GET | `/jobs/current` | 当前任务快照 |
 | POST | `/jobs/start` | 启动任务（按 `kind` 查清单） |
 | POST | `/jobs/cancel` | 取消当前任务 |
-| WS | `/events` | 事件流（含重放） |
-| GET | `/tools` | 已注册工具清单（供前端导航渲染） |
+| WS | `/events` | 事件流（含重放，需 query token） |
+| GET | `/tools` | 已注册工具清单（需 `X-Local-Token`，供前端导航渲染） |
+| GET | `/updates/check` | 检查固定 GitHub Release（需 `X-Local-Token`） |
+| POST | `/updates/apply` | 下载、校验并生成 ready 更新协议（需 token） |
+| GET | `/updates/progress` | 查询更新进度（需 `X-Local-Token`） |
 
 运行时只允许一个非终态任务。任务通过后台线程执行，支持完成、取消、冲突检测和失败状态。事件总线合并相邻的同任务进度事件，重放历史默认最多 512 个事件；重连时以当前任务快照为权威状态。
 
 `/tools` 返回 `ToolRegistry` 中所有 `ToolDescriptor`，前端可据此渲染导航栏。
+
+更新发布、替换和回滚步骤见 [`docs/UPDATE_SOP.md`](docs/UPDATE_SOP.md)。
 
 ## 扩展新工具
 
 1. 替换 `domain/` 和 `application/` 里的业务逻辑（任务、事件、状态机）
 2. 在 `api/routes/` 增改路由，在 `api/schemas.py` 调整响应模型
 3. 在 `web/src/app/` 添加工具视图，在 `App.tsx` 导航列表注册
-4. 调 `main.py` 和 `desktop/launcher.py` 的窗口标题、尺寸
-5. 不动 `event_bus` / `desktop` 骨架，除非确有需要
+4. 通过 `ToolRegistry` 注册任务，前端从 `/tools` 清单生成导航
+5. 调 `main.py` 和 `desktop/launcher.py` 的窗口标题、尺寸
+6. 不动 `event_bus` / `desktop` 骨架，除非确有需要
 
 ## 边界
 
 - 无数据库、Redis、Celery 或其他外部服务
 - 无业务模块，演示任务只验证运行时契约
-- 已提供 pywebview / WebView2 桌面壳，未实现 Native Bridge 和 PyInstaller EXE 打包
+- 已提供 pywebview / WebView2 桌面壳、通用 NativeBridge 和 SYNTEC PyInstaller 打包编排
 - 无账号、权限和局域网安全边界，当前只面向本机开发服务
 - 任务状态默认不持久化，进程重启后丢失

@@ -83,6 +83,8 @@ class TaskRegistry:
         self._tasks: dict[str, Task] = {}
 
     def register(self, kind: str, task: Task) -> None:
+        if kind in self._tasks:
+            raise ValueError(f"task kind already registered: {kind!r}")
         self._tasks[kind] = task
 
     def get(self, kind: str) -> Task:

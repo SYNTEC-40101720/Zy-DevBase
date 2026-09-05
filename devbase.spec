@@ -7,7 +7,7 @@ Builds an onedir (single folder) distribution containing:
   * the prebuilt web/dist frontend (served as static files)
 
 Run from the project root:
-    & backend\.venv\Scripts\python.exe -m PyInstaller devbase.spec --noconfirm
+    & backend\\.venv\\Scripts\\python.exe -m PyInstaller devbase.spec --noconfirm
 """
 
 from pathlib import Path
@@ -66,11 +66,11 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="Syntec_DevBase",
+    name="SYNTEC_DevBase",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -87,7 +87,7 @@ coll = COLLECT(
     a.zipfiles,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
-    name="Syntec_DevBase",
+    name="SYNTEC_DevBase",
 )

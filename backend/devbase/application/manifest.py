@@ -68,6 +68,8 @@ class ToolRegistry:
     def register(self, descriptor: ToolDescriptor) -> None:
         if not descriptor.kind:
             raise ValueError("tool kind must be non-empty")
+        if descriptor.kind in self._tools:
+            raise ValueError(f"tool kind already registered: {descriptor.kind!r}")
         self._tools[descriptor.kind] = descriptor
 
     def get(self, kind: str) -> ToolDescriptor:

@@ -71,6 +71,7 @@ code {
 /* ---- 空态起始页 ---- */
 
 .workbench-empty {
+  position: relative;
   align-items: center;
   justify-content: center;
 }
@@ -375,6 +376,12 @@ code {
   display: flex;
   flex: none;
   flex-direction: column;
+}
+
+.sidebar-help-icon {
+  align-self: flex-end;
+  margin: 6px 4px 2px 0;
+  color: var(--faint);
 }
 
 .sidebar-settings-btn {
@@ -713,6 +720,213 @@ code {
   text-align: right;
 }
 
+/* ---- Shared runtime surfaces ---- */
+
+.status-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  padding: 0 14px;
+  color: var(--muted);
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+}
+
+.status-connection {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.status-connection:hover {
+  color: var(--ink);
+  background: var(--surface-sunken);
+}
+
+.status-connection-connected {
+  color: var(--green);
+}
+
+.status-connection-connecting {
+  color: var(--accent);
+}
+
+.status-connection-unauthorized,
+.status-connection-disconnected {
+  color: var(--rose);
+}
+
+.status-spacer {
+  flex: 1;
+}
+
+.status-runtime,
+.status-version {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-update-check {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.status-update-check:hover {
+  color: var(--accent);
+  background: var(--surface-sunken);
+}
+
+.status-version {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.status-spin {
+  animation: status-spin 900ms linear infinite;
+}
+
+@keyframes status-spin {
+  to { transform: rotate(360deg); }
+}
+
+.update-banner {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 10px;
+  color: var(--ink-soft);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-size: 12px;
+}
+
+.update-banner-available {
+  border-left-color: var(--blue);
+}
+
+.update-banner-error {
+  border-left-color: var(--rose);
+}
+
+.update-banner-icon {
+  display: inline-flex;
+  color: var(--accent);
+}
+
+.update-banner-dismiss {
+  margin-left: auto;
+  padding: 3px 6px;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.update-banner-dismiss:hover {
+  color: var(--ink);
+  background: var(--surface-sunken);
+}
+
+.update-banner-action {
+  margin-left: auto;
+  padding: 4px 8px;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.update-banner-action:hover {
+  background: var(--surface-sunken);
+}
+
+.bottom-panel {
+  display: flex;
+  flex: 0 0 min(220px, 30vh);
+  flex-direction: column;
+  min-height: 120px;
+  background: var(--surface);
+  border-top: 1px solid var(--line-strong);
+}
+
+.bottom-panel-header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+  padding: 0 12px 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.bottom-panel-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.icon-button {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  color: var(--ink);
+  background: var(--surface-sunken);
+}
+
+.bottom-panel-body {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  padding: 12px 14px;
+  overflow: auto;
+}
+
+.bottom-panel-empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 /* ============ 响应式 ============ */
 
 @media (max-width: 760px) {
@@ -722,5 +936,9 @@ code {
 
   .settings-scroll {
     padding: 16px 12px 32px;
+  }
+
+  .status-runtime {
+    display: none;
   }
 }

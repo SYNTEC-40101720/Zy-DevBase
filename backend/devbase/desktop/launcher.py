@@ -8,6 +8,7 @@ from threading import Event, Thread
 from time import monotonic
 from typing import Any
 from urllib.error import URLError
+from urllib.parse import urlencode
 from urllib.request import urlopen
 
 import uvicorn
@@ -18,6 +19,7 @@ from devbase.application.lifecycle import (
     LifecyclePolicy,
     WindowCloseMode,
 )
+from devbase.desktop.native_bridge import NativeBridge
 
 
 class DesktopLaunchError(RuntimeError):
@@ -56,8 +58,11 @@ def _format_url_host(host: str) -> str:
     return local_host
 
 
-def _desktop_url(host: str, port: int) -> str:
-    return f"http://{_format_url_host(host)}:{port}/"
+def _desktop_url(host: str, port: int, token: str | None = None) -> str:
+    url = f"http://{_format_url_host(host)}:{port}/"
+    if token:
+        url += "?" + urlencode({"token": token})
+    return url
 
 
 def _wait_for_server_ready(
@@ -88,6 +93,23 @@ def _wait_for_server_ready(
     return False
 
 
+def _wait_for_job_terminal(
+    runtime: Any,
+    stop_event: Event,
+    timeout: float,
+) -> bool:
+    deadline = monotonic() + timeout
+    while not stop_event.is_set():
+        job = runtime.current_job()
+        if job is None or job.status.is_terminal:
+            return True
+        remaining = deadline - monotonic()
+        if remaining <= 0:
+            return False
+        stop_event.wait(min(0.1, remaining))
+    return False
+
+
 def run_desktop(
     static_dir: str | Path,
     host: str = "127.0.0.1",
@@ -102,6 +124,7 @@ def run_desktop(
     server_factory: ServerFactory | None = None,
     webview_module: Any | None = None,
     readiness_waiter: ReadinessWaiter | None = None,
+    native_bridge: NativeBridge | None = None,
 ) -> None:
     """Run the local API and host its static frontend in a desktop window."""
     normalized_close_mode = WindowCloseMode(close_mode)
@@ -127,12 +150,17 @@ def run_desktop(
         name="devbase-api-server",
         daemon=True,
     )
+    close_result = None
 
     def on_closed(*_args: Any, **_kwargs: Any) -> None:
+        nonlocal close_result
         try:
-            app.state.window_lifecycle.handle_window_close()
+            close_result = app.state.window_lifecycle.handle_window_close()
         finally:
-            server.should_exit = True
+            if close_result is not None and (
+                close_result.mode is WindowCloseMode.STOP_ON_CLOSE
+            ):
+                server.should_exit = True
 
     server_thread.start()
     try:
@@ -151,14 +179,24 @@ def run_desktop(
         try:
             window = webview.create_window(
                 title=window_title,
-                url=_desktop_url(host, port),
+                url=_desktop_url(host, port, app.state.local_token),
                 width=window_width,
                 height=window_height,
+                js_api=native_bridge or NativeBridge(),
             )
             if window is None:
                 raise RuntimeError("pywebview 未创建窗口")
             window.events.closed += on_closed
             webview.start(gui="edgechromium", debug=False)
+            if (
+                close_result is not None
+                and close_result.mode is WindowCloseMode.CONTINUE_ON_CLOSE
+            ):
+                _wait_for_job_terminal(
+                    app.state.runtime,
+                    stop_event,
+                    readiness_timeout,
+                )
         except DesktopLaunchError:
             raise
         except Exception as error:

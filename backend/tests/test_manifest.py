@@ -53,6 +53,39 @@ def test_tool_registry_unknown_kind_raises_not_found() -> None:
         raise AssertionError("expected TaskNotFoundError")
 
 
+def test_tool_registry_rejects_duplicate_kind() -> None:
+    registry = ToolRegistry()
+    descriptor = ToolDescriptor(
+        kind="duplicate",
+        title="Duplicate",
+        group="tool",
+        glyph="x",
+    )
+    registry.register(descriptor)
+
+    try:
+        registry.register(descriptor)
+    except ValueError as exc:
+        assert "already registered" in str(exc)
+    else:
+        raise AssertionError("expected duplicate registration to fail")
+
+
+def test_task_registry_rejects_duplicate_kind() -> None:
+    from devbase.application.task import TaskRegistry
+
+    registry = TaskRegistry()
+    task = lambda _ctx: {"done": True}
+    registry.register("duplicate", task)
+
+    try:
+        registry.register("duplicate", task)
+    except ValueError as exc:
+        assert "already registered" in str(exc)
+    else:
+        raise AssertionError("expected duplicate registration to fail")
+
+
 def test_tool_registry_sorts_descriptors_by_group_then_kind() -> None:
     registry = ToolRegistry()
     for kind, group in [("zeta", "b"), ("alpha", "b"), ("mid", "a")]:

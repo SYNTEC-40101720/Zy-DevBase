@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from devbase.api.dependencies import get_runtime
+from devbase.api.dependencies import get_runtime, require_local_token
 from devbase.api.schemas import (
     ToolDescriptorResponse,
     ToolListResponse,
@@ -8,7 +8,11 @@ from devbase.api.schemas import (
 )
 from devbase.application.job_runtime import JobRuntime
 
-router = APIRouter(prefix="/tools", tags=["tools"])
+router = APIRouter(
+    prefix="/tools",
+    tags=["tools"],
+    dependencies=[Depends(require_local_token)],
+)
 
 
 @router.get("", response_model=ToolListResponse)

@@ -39,6 +39,7 @@ class InMemoryResourceProvider:
     _TABLE: dict[str, str] = {
         "job.queued": "任务已排队: {kind}",
         "job.running": "任务运行中: {kind}",
+        "job.cancelling": "任务取消中…",
         "job.completed": "任务已完成",
         "job.cancelled": "任务已取消",
         "job.failed": "任务失败: {exc}",

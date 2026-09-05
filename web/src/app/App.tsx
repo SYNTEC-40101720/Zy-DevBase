@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, LayoutGrid, Monitor, Moon, PanelLeft, Settings, Sun } from "lucide-react";
-import appLogo from "../assets/app-logo.svg";
+import { ArrowLeft, LayoutGrid, Monitor, Moon, Sun } from "lucide-react";
+
+import { RuntimeEventStream } from "../api/events";
+import { apiClient } from "../api/client";
+import { BottomPanel } from "../components/BottomPanel";
+import { Sidebar } from "../components/Sidebar";
+import { StatusBar } from "../components/StatusBar";
+import { UpdateBanner } from "../components/UpdateBanner";
+import { useWorkbenchStore, workbenchStore } from "../store/workbench";
 
 /* ============================================================
  *  工作台外壳 — 借鉴 DeepSeek Harness 侧边栏设计
@@ -19,6 +26,7 @@ type ThemeMode = "system" | "light" | "dark";
 const RAIL_WIDTH = 56;
 const MIN_WIDE = 232;
 const MAX_WIDE = 360;
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || "0.1.0";
 
 function clamp(v: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, v));
@@ -28,9 +36,38 @@ export default function App() {
   const [view, setView] = useState<View>("workbench");
   const [collapsed, setCollapsed] = useState(false);
   const [wideWidth, setWideWidth] = useState(264);
+  const { tools, selectedTool, connection, bottomPanelOpen, updateStatus } = useWorkbenchStore();
+  const selectedToolDescriptor = tools.find((tool) => tool.kind === selectedTool);
   const [theme, setTheme] = useState<ThemeMode>(() => {
     return (localStorage.getItem("theme") as ThemeMode) || "system";
   });
+
+  useEffect(() => {
+    if (!apiClient.hasToken) {
+      workbenchStore.patch({ connection: "unauthorized" });
+      return;
+    }
+
+    const controller = new AbortController();
+    apiClient.listTools(controller.signal)
+      .then((loadedTools) => workbenchStore.patch({ tools: loadedTools }))
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) {
+          workbenchStore.patch({ connection: error instanceof Error && "status" in error && error.status === 401 ? "unauthorized" : "disconnected" });
+        }
+      });
+
+    const stream = new RuntimeEventStream(apiClient, {
+      onStatus: (status) => workbenchStore.patch({ connection: status }),
+      onSnapshot: () => undefined,
+      onEvent: () => undefined,
+    });
+    stream.connect();
+    return () => {
+      controller.abort();
+      stream.close();
+    };
+  }, []);
 
   // ---- 主题应用 ----
   useEffect(() => {
@@ -80,6 +117,41 @@ export default function App() {
 
   const toggleSidebar = () => setCollapsed((v) => !v);
   const sidebarWidth = collapsed ? RAIL_WIDTH : wideWidth;
+  const selectTool = (kind: string) => {
+    workbenchStore.patch({ selectedTool: kind });
+    setView("workbench");
+  };
+  const toggleBottomPanel = () => {
+    workbenchStore.patch({ bottomPanelOpen: !bottomPanelOpen });
+  };
+  const checkForUpdate = () => {
+    if (!apiClient.hasToken) {
+      workbenchStore.patch({ updateStatus: "error" });
+      return;
+    }
+    workbenchStore.patch({ updateStatus: "checking" });
+    apiClient.checkUpdate()
+      .then((result) => {
+        workbenchStore.patch({
+          updateStatus: result.available ? "available" : "up_to_date",
+        });
+      })
+      .catch(() => workbenchStore.patch({ updateStatus: "error" }));
+  };
+  const prepareUpdate = () => {
+    workbenchStore.patch({ updateStatus: "downloading" });
+    apiClient.applyUpdate()
+      .then((result) => {
+        workbenchStore.patch({
+          updateStatus: result.rollback
+            ? "rollback"
+            : result.status === "succeeded"
+              ? "succeeded"
+              : "available",
+        });
+      })
+      .catch(() => workbenchStore.patch({ updateStatus: "error" }));
+  };
 
   return (
     <div
@@ -87,112 +159,37 @@ export default function App() {
       style={{ gridTemplateColumns: sidebarWidth + "px minmax(0,1fr)" }}
       data-sidebar-collapsed={collapsed || undefined}
     >
-      {/* ============ 侧边栏 ============ */}
-      <nav
-        className={"sidebar" + (collapsed ? " is-collapsed" : "")}
-        aria-label="导航"
-      >
-        {/* ---- 品牌行 ---- */}
-        <div className="sidebar-brand-row">
-          {!collapsed && (
-            <button
-              type="button"
-              className="sidebar-brand"
-              title="DevBase"
-              onClick={() => setView("workbench")}
-            >
-              <img className="sidebar-brand-mark" src={appLogo} alt="DevBase" />
-              <span className="sidebar-brand-name">DevBase</span>
-            </button>
-          )}
-          {collapsed && (
-            <>
-              <img className="sidebar-brand-mark" src={appLogo} alt="DevBase" title="DevBase" />
-              <button
-                type="button"
-                className="sidebar-toggle sidebar-toggle-rail"
-                aria-label="展开侧边栏"
-                title="展开侧边栏"
-                onClick={toggleSidebar}
-              >
-                <PanelLeft size={18} strokeWidth={1.6} />
-              </button>
-            </>
-          )}
-          {!collapsed && (
-            <button
-              type="button"
-              className="sidebar-toggle"
-              aria-label="收起侧边栏"
-              title="收起侧边栏"
-              onClick={toggleSidebar}
-            >
-              <PanelLeft size={16} strokeWidth={1.6} />
-            </button>
-          )}
-        </div>
-
-        {/* ---- 导航列表 ---- */}
-        <div className="sidebar-region" role="navigation">
-          <ul className="sidebar-nav-list">
-            <li>
-              <button
-                type="button"
-                className={"sidebar-nav-item" + (view === "workbench" ? " is-selected" : "")}
-                title="工作台"
-                aria-current={view === "workbench" ? "page" : undefined}
-                onClick={() => setView("workbench")}
-              >
-                <span className="sidebar-nav-icon">
-                  <LayoutGrid size={18} strokeWidth={1.6} />
-                </span>
-                {!collapsed && (
-                  <span className="sidebar-nav-text">
-                    <span className="sidebar-nav-title">工作台</span>
-                    <span className="sidebar-nav-sub">起始页</span>
-                  </span>
-                )}
-              </button>
-            </li>
-          </ul>
-        </div>
-
-        {/* ---- 底部设置 ---- */}
-        <div className="sidebar-foot">
-          <button
-            type="button"
-            className={"sidebar-settings-btn" + (view === "settings" ? " is-active" : "")}
-            title="设置"
-            aria-label="设置"
-            aria-current={view === "settings" ? "page" : undefined}
-            onClick={() => setView("settings")}
-          >
-            <Settings size={collapsed ? 18 : 16} strokeWidth={1.6} />
-            {!collapsed && <span className="sidebar-settings-label">设置</span>}
-          </button>
-        </div>
-      </nav>
-
-      {/* ---- 拖拽手柄 ---- */}
-      {!collapsed && (
-        <div
-          className="sidebar-drag-handle"
-          style={{ left: sidebarWidth - 4 }}
-          onPointerDown={onDragStart}
-          aria-hidden="true"
-        />
-      )}
+      <Sidebar
+        collapsed={collapsed}
+        sidebarWidth={sidebarWidth}
+        view={view}
+        tools={tools}
+        selectedTool={selectedTool}
+        onToggle={toggleSidebar}
+        onDragStart={onDragStart}
+        onWorkbench={() => {
+          workbenchStore.patch({ selectedTool: null });
+          setView("workbench");
+        }}
+        onToolSelect={selectTool}
+        onSettings={() => setView("settings")}
+      />
 
       {/* ============ 主区 ============ */}
       <div className="sidebar-center-col">
         {view === "workbench" ? (
           <div className="workbench workbench-empty">
+            <UpdateBanner
+              status={updateStatus}
+              onApply={prepareUpdate}
+              onDismiss={() => workbenchStore.patch({ updateStatus: "idle" })}
+            />
             <div className="empty-hero">
               <div className="empty-hero-icon">
                 <LayoutGrid size={28} strokeWidth={1.4} />
               </div>
-              <h2>工作台已就绪</h2>
-              <p>这是一个空白模板。在此添加你的工具视图与业务逻辑。</p>
+              <h2>{selectedToolDescriptor?.title ?? "工作台已就绪"}</h2>
+              <p>{selectedToolDescriptor?.subtitle ?? "选择一个工具开始工作。"}</p>
             </div>
           </div>
         ) : (
@@ -295,6 +292,19 @@ export default function App() {
               </div>
             </div>
           </div>
+        )}
+        <StatusBar
+          connection={connection}
+          version={APP_VERSION}
+          onTogglePanel={toggleBottomPanel}
+          onCheckUpdate={checkForUpdate}
+          panelOpen={bottomPanelOpen}
+        />
+        {bottomPanelOpen && (
+          <BottomPanel
+            connection={connection}
+            onClose={() => workbenchStore.patch({ bottomPanelOpen: false })}
+          />
         )}
       </div>
     </div>

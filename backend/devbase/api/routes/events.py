@@ -3,6 +3,7 @@ from contextlib import suppress
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from devbase.api.dependencies import validate_websocket_token
 from devbase.api.schemas import event_response, snapshot_response
 
 router = APIRouter(tags=["events"])
@@ -10,6 +11,9 @@ router = APIRouter(tags=["events"])
 
 @router.websocket("/events")
 async def events(websocket: WebSocket) -> None:
+    if not validate_websocket_token(websocket):
+        await websocket.close(code=1008, reason="invalid local API token")
+        return
     runtime = websocket.app.state.runtime
     await websocket.accept()
     disconnected = asyncio.Event()

@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import argparse
 import os
+import secrets
 import sys
 import threading
 import webbrowser
 from pathlib import Path
 from time import monotonic
 from urllib.error import URLError
+from urllib.parse import urlencode
 from urllib.request import urlopen
 
 
@@ -88,8 +90,11 @@ def _format_url_host(host: str) -> str:
     return local_host
 
 
-def _browser_url(host: str, port: int) -> str:
-    return f"http://{_format_url_host(host)}:{port}/"
+def _browser_url(host: str, port: int, token: str | None = None) -> str:
+    url = f"http://{_format_url_host(host)}:{port}/"
+    if token:
+        url += "?" + urlencode({"token": token})
+    return url
 
 
 def _wait_for_server_ready(
@@ -121,9 +126,10 @@ def _open_browser_when_ready(
     host: str,
     port: int,
     stop_event: threading.Event,
+    token: str | None = None,
 ) -> None:
     if _wait_for_server_ready(host, port, stop_event):
-        webbrowser.open(_browser_url(host, port))
+        webbrowser.open(_browser_url(host, port, token))
     elif not stop_event.is_set():
         print("服务未及时就绪，未自动打开浏览器。", file=sys.stderr)
 
@@ -159,13 +165,16 @@ def main() -> None:
     import uvicorn
 
     previous_static_dir = os.environ.get("PLATFORM_STATIC_DIR")
+    previous_local_token = os.environ.get("PLATFORM_LOCAL_TOKEN")
+    local_token = previous_local_token or secrets.token_urlsafe(32)
     os.environ["PLATFORM_STATIC_DIR"] = str(static_dir)
+    os.environ["PLATFORM_LOCAL_TOKEN"] = local_token
     stop_event = threading.Event()
     browser_thread: threading.Thread | None = None
     if not args.no_browser:
         browser_thread = threading.Thread(
             target=_open_browser_when_ready,
-            args=(args.host, args.port, stop_event),
+            args=(args.host, args.port, stop_event, local_token),
             name="devbase-browser-opener",
         )
         browser_thread.start()
@@ -187,6 +196,10 @@ def main() -> None:
             os.environ.pop("PLATFORM_STATIC_DIR", None)
         else:
             os.environ["PLATFORM_STATIC_DIR"] = previous_static_dir
+        if previous_local_token is None:
+            os.environ.pop("PLATFORM_LOCAL_TOKEN", None)
+        else:
+            os.environ["PLATFORM_LOCAL_TOKEN"] = previous_local_token
 
 
 if __name__ == "__main__":

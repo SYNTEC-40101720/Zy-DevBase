@@ -126,6 +126,11 @@ class JobRuntime:
         return self.start("demo_long_task")
 
     def cancel_current(self) -> JobSnapshot:
+        """Request cancellation: transitions to CANCELLING.
+
+        The worker thread will observe the cancel event and ultimately
+        transition to CANCELLED (or SUCCEEDED if it finishes first).
+        """
         with self._lock:
             if self._active is None:
                 raise NoCurrentJobError("no current job exists")
@@ -135,9 +140,9 @@ class JobRuntime:
             self._active.cancellation_requested.set()
             self._set_state_locked(
                 self._active,
-                status=JobStatus.CANCELLED,
-                kind=EventKind.JOB_CANCELLED,
-                message=self._resources.string("job.cancelled"),
+                status=JobStatus.CANCELLING,
+                kind=EventKind.JOB_CANCELLING,
+                message=self._resources.string("job.cancelling"),
             )
             return self._snapshot_locked(self._active)
 
@@ -220,8 +225,10 @@ class JobRuntime:
             result = task(ctx)  # type: ignore[operator]
             if isinstance(result, dict):
                 result_message = result.get("message")
+                warnings = result.get("warnings")
             else:
                 result_message = None
+                warnings = None
             if not result_message:
                 result_message = self._resources.string("job.completed")
 
@@ -229,14 +236,29 @@ class JobRuntime:
                 job = self._get_active_locked(job_id)
                 if job is not None and not job.status.is_terminal:
                     if job.cancellation_requested.is_set():
-                        return
-                    self._set_state_locked(
-                        job,
-                        status=JobStatus.COMPLETED,
-                        kind=EventKind.JOB_COMPLETED,
-                        progress=100,
-                        message=result_message,
-                    )
+                        # Task returned after cancel was requested → CANCELLED
+                        self._set_state_locked(
+                            job,
+                            status=JobStatus.CANCELLED,
+                            kind=EventKind.JOB_CANCELLED,
+                            message=self._resources.string("job.cancelled"),
+                        )
+                    elif warnings:
+                        self._set_state_locked(
+                            job,
+                            status=JobStatus.COMPLETED_WITH_WARNINGS,
+                            kind=EventKind.JOB_COMPLETED_WITH_WARNINGS,
+                            progress=100,
+                            message=result_message,
+                        )
+                    else:
+                        self._set_state_locked(
+                            job,
+                            status=JobStatus.SUCCEEDED,
+                            kind=EventKind.JOB_SUCCEEDED,
+                            progress=100,
+                            message=result_message,
+                        )
         except Exception as exc:
             with self._lock:
                 job = self._get_active_locked(job_id)
