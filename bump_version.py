@@ -180,6 +180,10 @@ def collect_versions(root: Path = ROOT_DIR) -> dict[str, Version]:
             root / "web" / "src" / "app" / "App.tsx",
             r"<dt>版本</dt>\s*<dd>([^<]+)</dd>",
         ),
+        "web/src/app/App.tsx APP_VERSION": _version_from_regex(
+            root / "web" / "src" / "app" / "App.tsx",
+            r"APP_VERSION = import\.meta\.env\.VITE_APP_VERSION \|\| \"([^\"]+)\"",
+        ),
     }
 
 
@@ -272,6 +276,11 @@ def update_version(root: Path, version: Version) -> None:
         root / "web" / "src" / "app" / "App.tsx",
         r"(<dt>版本</dt>\s*<dd>)[^<]+(</dd>)",
         lambda match: f"{match.group(1)}{version_text}{match.group(2)}",
+    )
+    _replace_once(
+        root / "web" / "src" / "app" / "App.tsx",
+        r"(APP_VERSION = import\.meta\.env\.VITE_APP_VERSION \|\| \")([^\"]+)(\")",
+        lambda match: f"{match.group(1)}{version_text}{match.group(3)}",
     )
 
 
