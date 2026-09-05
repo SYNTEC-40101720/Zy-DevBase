@@ -22,6 +22,8 @@ def _origin_is_allowed(app, origin: str | None, same_origin: str) -> bool:
     if not origin:
         return True
     normalized = origin.rstrip("/")
+    if normalized == same_origin.rstrip("/"):
+        return True
     allowed_origins = getattr(app.state, "allowed_origins", frozenset())
     if allowed_origins:
         return normalized in allowed_origins

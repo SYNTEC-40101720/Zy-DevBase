@@ -265,6 +265,22 @@ def test_websocket_correct_token_succeeds() -> None:
     assert health["type"] == "health"
 
 
+def test_websocket_same_origin_allowed_with_dev_allowlist() -> None:
+    """Direct browser hosting on the API port remains same-origin."""
+    client = TestClient(
+        create_app(
+            local_token=TEST_TOKEN,
+            allowed_origins=["http://localhost:5173"],
+        )
+    )
+
+    with client.websocket_connect(
+        f"/api/v1/events?token={TEST_TOKEN}",
+        headers={"Origin": "http://testserver"},
+    ) as websocket:
+        assert websocket.receive_json()["type"] == "health"
+
+
 def test_default_random_token_generated_when_omitted() -> None:
     """未传 local_token 时应自动生成随机 token。独立实例 token 互不相同。"""
     app_a = create_app()

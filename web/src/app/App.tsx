@@ -280,7 +280,7 @@ export default function App() {
                       </div>
                       <div className="settings-kv-row">
                         <dt>版本</dt>
-                        <dd>0.3.0</dd>
+                        <dd>0.3.1</dd>
                       </div>
                       <div className="settings-kv-row">
                         <dt>技术栈</dt>

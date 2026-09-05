@@ -378,12 +378,6 @@ code {
   flex-direction: column;
 }
 
-.sidebar-help-icon {
-  align-self: flex-end;
-  margin: 6px 4px 2px 0;
-  color: var(--faint);
-}
-
 .sidebar-settings-btn {
   display: flex;
   width: 100%;

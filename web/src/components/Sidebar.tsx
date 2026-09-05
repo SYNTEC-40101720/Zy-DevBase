@@ -2,7 +2,6 @@ import type { PointerEventHandler } from "react";
 import {
   ArrowRight,
   BriefcaseBusiness,
-  CircleHelp,
   LayoutGrid,
   MonitorCog,
   PanelLeft,
@@ -159,7 +158,6 @@ export function Sidebar({
             <Settings size={collapsed ? 18 : 16} strokeWidth={1.6} />
             {!collapsed && <span className="sidebar-settings-label">设置</span>}
           </button>
-          {!collapsed && <CircleHelp className="sidebar-help-icon" size={15} strokeWidth={1.6} />}
         </div>
       </nav>
       {!collapsed && (
