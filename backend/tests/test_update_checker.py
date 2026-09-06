@@ -146,6 +146,23 @@ def test_wrong_download_host_is_rejected() -> None:
     assert "matching release asset" in result.error
 
 
+def test_asset_version_must_match_release_tag() -> None:
+    client = GitHubReleaseClient(
+        opener=opener_for(
+            release_payload(
+                "v1.2.0",
+                name="SYNTEC_DevBase-1.1.0.zip",
+                url="https://github.com/SYNTEC-40101720/Zy-DevBase/releases/download/v1.2.0/SYNTEC_DevBase-1.1.0.zip",
+            )
+        )
+    )
+
+    result = client.check("1.0.0")
+
+    assert result.installable is False
+    assert "version does not match" in (result.error or "")
+
+
 def test_missing_digest_is_rejected() -> None:
     client = GitHubReleaseClient(
         opener=opener_for(release_payload("v1.2.0", digest=None))

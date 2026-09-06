@@ -64,6 +64,14 @@ def make_archive(path: Path) -> Path:
             "SYNTEC_DevBase/SYNTEC_DevBase-updater.exe",
             b"updater",
         )
+        archive.writestr(
+            "SYNTEC_DevBase/_internal/python312.dll",
+            b"runtime",
+        )
+        archive.writestr(
+            "SYNTEC_DevBase/_internal/base_library.zip",
+            b"library",
+        )
     return path
 
 
@@ -83,7 +91,29 @@ def test_manager_prepares_external_apply_runtime(tmp_path: Path) -> None:
 
     assert updater.is_file()
     assert updater.parent.name.startswith("updater-runtime-")
+    assert updater.parent.parent == tmp_path / "updates"
     assert read_ready_file(ready_file).process_id == 123
+
+
+def test_manager_rejects_missing_runtime(tmp_path: Path) -> None:
+    source = tmp_path / "source.zip"
+    with zipfile.ZipFile(source, "w") as archive:
+        archive.writestr("SYNTEC_DevBase/SYNTEC_DevBase.exe", b"new")
+        archive.writestr(
+            "SYNTEC_DevBase/SYNTEC_DevBase-updater.exe",
+            b"updater",
+        )
+    install = tmp_path / "install"
+    install.mkdir()
+    manager = UpdateManager(
+        "1.0.0",
+        client=FakeClient(source),
+        install_dir=install,
+        update_root=tmp_path / "updates",
+    )
+
+    with pytest.raises(RuntimeError, match="PyInstaller runtime"):
+        manager.stage()
 
 
 def test_manager_stage_writes_ready_progress(tmp_path: Path) -> None:

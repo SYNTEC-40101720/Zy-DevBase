@@ -27,6 +27,7 @@ class FakeUpdateManager:
         self.install_dir = Path("C:/install")
         self.updater_path = self.install_dir / "SYNTEC_DevBase-updater.exe"
         self.stamped_pid = None
+        self.discarded = False
 
     def check(self) -> UpdateCheckResult:
         release = ReleaseInfo(
@@ -46,6 +47,9 @@ class FakeUpdateManager:
             True,
             release,
         )
+
+    def discard_staged_update(self) -> None:
+        self.discarded = True
 
     def stage(self) -> ReadyUpdate:
         self.staged = True
@@ -134,6 +138,7 @@ def test_apply_and_restart_reports_updater_spawn_failure(monkeypatch) -> None:
 
     assert response.status_code == 500
     assert "cannot spawn updater" in response.json()["detail"]
+    assert manager.discarded is True
 
 
 def test_update_check_requires_local_token() -> None:

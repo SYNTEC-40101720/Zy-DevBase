@@ -63,8 +63,13 @@ def apply_and_restart(
 
     try:
         manager.stage()
+    except (RuntimeError, OSError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+    try:
         updater_executable, ready_file = manager.prepare_external_apply(os.getpid())
     except (RuntimeError, OSError) as error:
+        manager.discard_staged_update()
         raise HTTPException(status_code=409, detail=str(error)) from error
 
     try:
@@ -82,8 +87,10 @@ def apply_and_restart(
             ),
         )
     except RuntimeError as error:
+        manager.discard_staged_update()
         raise HTTPException(status_code=409, detail=str(error)) from error
     except OSError as error:
+        manager.discard_staged_update()
         raise HTTPException(status_code=500, detail=f"failed to start updater: {error}") from error
 
     background_tasks.add_task(shutdown)

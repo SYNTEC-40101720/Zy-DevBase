@@ -1,4 +1,4 @@
-import { CheckCircle2, CircleAlert, LoaderCircle, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { CheckCircle2, CircleAlert, LoaderCircle, Wifi, WifiOff } from "lucide-react";
 
 import type { ConnectionStatus } from "../api/types";
 
@@ -6,7 +6,6 @@ interface StatusBarProps {
   connection: ConnectionStatus;
   version: string;
   onTogglePanel: () => void;
-  onCheckUpdate: () => void;
   panelOpen: boolean;
 }
 
@@ -18,7 +17,7 @@ const labels: Record<ConnectionStatus, string> = {
   unauthorized: "需要令牌",
 };
 
-export function StatusBar({ connection, version, onTogglePanel, onCheckUpdate, panelOpen }: StatusBarProps) {
+export function StatusBar({ connection, version, onTogglePanel, panelOpen }: StatusBarProps) {
   const icon = connection === "connected"
     ? <CheckCircle2 size={14} strokeWidth={1.7} />
     : connection === "connecting"
@@ -41,9 +40,6 @@ export function StatusBar({ connection, version, onTogglePanel, onCheckUpdate, p
       </button>
       <span className="status-spacer" />
       <span className="status-runtime"><Wifi size={13} strokeWidth={1.6} /> 本地运行时</span>
-      <button type="button" className="status-update-check" onClick={onCheckUpdate} title="检查更新" aria-label="检查更新">
-        <RefreshCw size={13} strokeWidth={1.6} />
-      </button>
       <span className="status-version">v{version}</span>
     </footer>
   );

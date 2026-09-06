@@ -1,4 +1,6 @@
-import { ArrowLeft, LayoutGrid, Monitor, Moon, Sun } from "lucide-react";
+import { ArrowLeft, LayoutGrid, Monitor, Moon, RefreshCw, Sun } from "lucide-react";
+
+import type { UpdateStatus } from "../api/types";
 
 export type ThemeMode = "system" | "light" | "dark";
 
@@ -10,6 +12,9 @@ interface SettingsViewProps {
   maxWide: number;
   onWideWidthChange: (width: number) => void;
   version: string;
+  /** 更新检查状态,用于驱动版本行右侧按钮的态。 */
+  updateStatus?: UpdateStatus;
+  onCheckUpdate?: () => void;
   onBack: () => void;
 }
 
@@ -21,6 +26,8 @@ export function SettingsView({
   maxWide,
   onWideWidthChange,
   version,
+  updateStatus = "idle",
+  onCheckUpdate,
   onBack,
 }: SettingsViewProps) {
   const themeOptions = [
@@ -111,7 +118,26 @@ export function SettingsView({
                 </div>
                 <div className="settings-kv-row">
                   <dt>版本</dt>
-                  <dd>{version}</dd>
+                  <dd className="settings-version-cell">
+                    <span className="settings-version-value">v{version}</span>
+                    {onCheckUpdate && (
+                      <button
+                        type="button"
+                        className="settings-check-update"
+                        onClick={onCheckUpdate}
+                        disabled={updateStatus === "checking"}
+                        title="检查更新"
+                        aria-label="检查更新"
+                      >
+                        <RefreshCw
+                          size={13}
+                          strokeWidth={1.6}
+                          className={updateStatus === "checking" ? "status-spin" : undefined}
+                        />
+                        <span>{updateStatus === "checking" ? "检查中…" : "检查更新"}</span>
+                      </button>
+                    )}
+                  </dd>
                 </div>
                 <div className="settings-kv-row">
                   <dt>技术栈</dt>

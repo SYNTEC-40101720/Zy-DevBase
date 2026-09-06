@@ -704,6 +704,41 @@ code {
   text-align: right;
 }
 
+.settings-version-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-version-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-check-update {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  font-size: 12px;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.settings-check-update:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--surface-sunken);
+}
+
+.settings-check-update:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
 /* ---- Shared runtime surfaces ---- */
 
 .status-bar {
@@ -758,23 +793,6 @@ code {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-}
-
-.status-update-check {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  color: var(--muted);
-  background: none;
-  border: 0;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-
-.status-update-check:hover {
-  color: var(--accent);
-  background: var(--surface-sunken);
 }
 
 .status-version {

@@ -58,6 +58,15 @@ class UpdateManager:
         self._progress = UpdateProgress()
         self._ready: ReadyUpdate | None = None
         self._ready_file: Path | None = None
+        self._staging = False
+        self._cleanup_stale_runtime_dirs()
+
+    def _cleanup_stale_runtime_dirs(self) -> None:
+        if not self.update_root.is_dir():
+            return
+        for path in self.update_root.glob("updater-runtime-*"):
+            if path.is_dir():
+                shutil.rmtree(path, ignore_errors=True)
 
     def progress(self) -> UpdateProgress:
         with self._lock:
@@ -69,6 +78,8 @@ class UpdateManager:
             ready_file = self._ready_file
             if ready is None or ready_file is None:
                 raise RuntimeError("no staged update is ready")
+            if ready.process_id is not None:
+                raise RuntimeError("external update is already prepared")
             if self.updater_name is None:
                 raise RuntimeError("updater executable is not configured")
             staged_updater = ready.staged_dir / self.updater_name
@@ -76,16 +87,40 @@ class UpdateManager:
                 raise RuntimeError(
                     f"staged updater executable not found: {staged_updater}"
                 )
-            runtime_dir = ready_file.parent / f"updater-runtime-{uuid4().hex}"
-            runtime_dir.mkdir(parents=True, exist_ok=False)
-            shutil.copy2(staged_updater, runtime_dir / self.updater_name)
-            staged_internal = ready.staged_dir / "_internal"
-            if staged_internal.is_dir():
+            runtime_dir = self.update_root / f"updater-runtime-{uuid4().hex}"
+            try:
+                runtime_dir.mkdir(parents=True, exist_ok=False)
+                shutil.copy2(staged_updater, runtime_dir / self.updater_name)
+                staged_internal = ready.staged_dir / "_internal"
+                require_release_files(
+                    ready.staged_dir,
+                    executable_name=self.executable_name,
+                    updater_name=self.updater_name,
+                    require_runtime=True,
+                )
                 shutil.copytree(staged_internal, runtime_dir / "_internal")
-            ready = replace(ready, process_id=process_id)
-            write_ready_file(ready_file, ready)
+                ready = replace(
+                    ready,
+                    process_id=process_id,
+                    runtime_dir=runtime_dir,
+                )
+                write_ready_file(ready_file, ready)
+            except Exception:
+                shutil.rmtree(runtime_dir, ignore_errors=True)
+                raise
             self._ready = ready
             return runtime_dir / self.updater_name, ready_file
+
+    def discard_staged_update(self) -> None:
+        with self._lock:
+            ready_file = self._ready_file
+            ready = self._ready
+            self._ready = None
+            self._ready_file = None
+        if ready_file is not None:
+            shutil.rmtree(ready_file.parent, ignore_errors=True)
+        if ready is not None and ready.runtime_dir is not None:
+            shutil.rmtree(ready.runtime_dir, ignore_errors=True)
 
     def check(self) -> UpdateCheckResult:
         self._set_progress("checking", 5, "checking for updates")
@@ -99,16 +134,21 @@ class UpdateManager:
         return result
 
     def stage(self, result: UpdateCheckResult | None = None) -> ReadyUpdate:
-        if result is None:
-            result = self.check()
-        if not result.installable or result.release is None:
-            raise RuntimeError(result.error or "no installable update is available")
-
-        session = self.update_root / f"devbase-update-{uuid4().hex}"
-        extracted = session / "extracted"
-        download_dir = session / "download"
-        self._set_progress("downloading", 20, "downloading release")
+        with self._lock:
+            if self._ready is not None or self._staging:
+                raise RuntimeError("an update is already staged or being prepared")
+            self._staging = True
+        session: Path | None = None
         try:
+            if result is None:
+                result = self.check()
+            if not result.installable or result.release is None:
+                raise RuntimeError(result.error or "no installable update is available")
+
+            session = self.update_root / f"devbase-update-{uuid4().hex}"
+            extracted = session / "extracted"
+            download_dir = session / "download"
+            self._set_progress("downloading", 20, "downloading release")
             archive = self.client.download_asset(result.release.asset, download_dir)
             self._set_progress("staging", 65, "verifying release files")
             release_dir = safe_extract_zip(
@@ -120,6 +160,7 @@ class UpdateManager:
                 release_dir,
                 executable_name=self.executable_name,
                 updater_name=self.updater_name,
+                require_runtime=self.updater_name is not None,
             )
             backup_dir = self.install_dir.with_name(
                 f"{self.install_dir.name}.backup-{uuid4().hex[:8]}"
@@ -135,6 +176,7 @@ class UpdateManager:
             with self._lock:
                 self._ready = ready
                 self._ready_file = ready_file
+                self._staging = False
                 self._progress = UpdateProgress(
                     status="ready",
                     percent=80,
@@ -143,7 +185,10 @@ class UpdateManager:
                 )
             return ready
         except Exception as error:
-            shutil.rmtree(session, ignore_errors=True)
+            if session is not None:
+                shutil.rmtree(session, ignore_errors=True)
+            with self._lock:
+                self._staging = False
             self._set_progress("failed", 0, str(error), error=str(error))
             raise
 

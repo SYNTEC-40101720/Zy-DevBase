@@ -236,10 +236,15 @@ class GitHubReleaseClient:
         assets = payload.get("assets")
         if not isinstance(assets, list):
             raise UpdateCheckError("release assets are missing")
-        asset = self._select_asset(assets)
+        asset = self._select_asset(assets, expected_version=version)
         return ReleaseInfo(tag_name, version, html_url, asset)
 
-    def _select_asset(self, assets: list[Any]) -> ReleaseAsset:
+    def _select_asset(
+        self,
+        assets: list[Any],
+        *,
+        expected_version: ReleaseVersion | None = None,
+    ) -> ReleaseAsset:
         candidates: list[ReleaseAsset] = []
         for raw in assets:
             if not isinstance(raw, dict):
@@ -252,6 +257,13 @@ class GitHubReleaseClient:
                 continue
             if not download_url.startswith(self.config.download_prefix):
                 continue
+            if download_url.rsplit("/", 1)[-1] != name:
+                raise UpdateCheckError("release asset URL does not match asset name")
+            asset_version = ReleaseVersion.parse(
+                name[len(self.config.asset_prefix) : -len(".zip")]
+            )
+            if expected_version is not None and asset_version != expected_version:
+                raise UpdateCheckError("release asset version does not match release tag")
             digest = _parse_digest(raw.get("digest"))
             if digest is None:
                 raise UpdateCheckError("release asset is missing SHA-256 digest")

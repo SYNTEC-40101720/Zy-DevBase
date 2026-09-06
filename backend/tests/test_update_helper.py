@@ -95,6 +95,32 @@ def test_ready_file_round_trip(tmp_path: Path) -> None:
     assert json.loads(path.read_text(encoding="utf-8"))["process_id"] == 123
 
 
+def test_process_with_exit_code_259_is_not_running(monkeypatch) -> None:
+    import ctypes
+    from devbase.desktop import update_helper
+
+    class FakeFunction:
+        def __init__(self, result):
+            self.result = result
+            self.argtypes = None
+            self.restype = None
+
+        def __call__(self, *_args):
+            return self.result
+
+    class FakeKernel32:
+        def __init__(self):
+            self.OpenProcess = FakeFunction(1)
+            self.WaitForSingleObject = FakeFunction(0)
+            self.CloseHandle = FakeFunction(True)
+
+    monkeypatch.setattr(update_helper.sys, "platform", "win32")
+    monkeypatch.setattr(ctypes, "WinDLL", lambda *_args, **_kwargs: FakeKernel32())
+    monkeypatch.setattr(ctypes, "get_last_error", lambda: 0)
+
+    assert update_helper._process_is_running(123) is False
+
+
 def test_wait_for_process_exit_accepts_missing_process() -> None:
     from devbase.desktop import update_helper
 

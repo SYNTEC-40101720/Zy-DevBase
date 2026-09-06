@@ -27,6 +27,7 @@ class ReadyUpdate:
     process_id: int | None = None
     executable_name: str = "SYNTEC_DevBase.exe"
     updater_name: str = "SYNTEC_DevBase-updater.exe"
+    runtime_dir: Path | None = None
 
 
 def _member_parts(name: str) -> tuple[str, ...]:
@@ -91,6 +92,7 @@ def require_release_files(
     *,
     executable_name: str,
     updater_name: str | None = None,
+    require_runtime: bool = False,
 ) -> None:
     root = Path(release_dir)
     executable_matches = [path for path in root.rglob(executable_name) if path.is_file()]
@@ -104,6 +106,12 @@ def require_release_files(
             raise UpdateApplyError(
                 f"expected one {updater_name}, found {len(updater_matches)}"
             )
+    if require_runtime:
+        internal = root / "_internal"
+        if not internal.is_dir() or not any(internal.glob("python*.dll")):
+            raise UpdateApplyError("release is missing PyInstaller runtime files")
+        if not (internal / "base_library.zip").is_file():
+            raise UpdateApplyError("release is missing PyInstaller base_library.zip")
 
 
 def _same_volume(*paths: Path) -> bool:
@@ -125,21 +133,20 @@ def _process_is_running(process_id: int) -> bool:
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
     kernel32.OpenProcess.restype = wintypes.HANDLE
-    kernel32.GetExitCodeProcess.argtypes = [
-        wintypes.HANDLE,
-        ctypes.POINTER(wintypes.DWORD),
-    ]
-    kernel32.GetExitCodeProcess.restype = wintypes.BOOL
+    kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+    kernel32.WaitForSingleObject.restype = wintypes.DWORD
     kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
     kernel32.CloseHandle.restype = wintypes.BOOL
-    handle = kernel32.OpenProcess(0x1000, False, process_id)
+    handle = kernel32.OpenProcess(0x00100000, False, process_id)
     if not handle:
         return ctypes.get_last_error() != 87
-    exit_code = wintypes.DWORD()
     try:
-        if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+        result = kernel32.WaitForSingleObject(handle, 0)
+        if result == 0:
+            return False
+        if result == 258:
             return True
-        return exit_code.value == 259
+        return True
     finally:
         kernel32.CloseHandle(handle)
 
@@ -236,6 +243,7 @@ def write_ready_file(path: str | Path, update: ReadyUpdate) -> Path:
         "process_id": update.process_id,
         "executable_name": update.executable_name,
         "updater_name": update.updater_name,
+        "runtime_dir": None if update.runtime_dir is None else str(update.runtime_dir),
     }
     temporary = target.with_suffix(target.suffix + ".tmp")
     temporary.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
@@ -252,6 +260,7 @@ def read_ready_file(path: str | Path) -> ReadyUpdate:
         process_id=payload.get("process_id"),
         executable_name=payload.get("executable_name", "SYNTEC_DevBase.exe"),
         updater_name=payload.get("updater_name", "SYNTEC_DevBase-updater.exe"),
+        runtime_dir=None if payload.get("runtime_dir") is None else Path(payload["runtime_dir"]),
     )
 
 

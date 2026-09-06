@@ -200,6 +200,8 @@ export default function App() {
             maxWide={MAX_WIDE}
             onWideWidthChange={setWideWidth}
             version={APP_VERSION}
+            updateStatus={updateStatus}
+            onCheckUpdate={checkForUpdate}
             onBack={() => setView("workbench")}
           />
         )}
@@ -207,7 +209,6 @@ export default function App() {
           connection={connection}
           version={APP_VERSION}
           onTogglePanel={toggleBottomPanel}
-          onCheckUpdate={checkForUpdate}
           panelOpen={bottomPanelOpen}
         />
         {bottomPanelOpen && (
