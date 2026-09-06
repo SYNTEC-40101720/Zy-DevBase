@@ -189,6 +189,15 @@ def run_desktop(
                 "桌面模式的本地服务未及时就绪，未打开 WebView 窗口。"
             )
 
+        url = _desktop_url(host, port, app.state.local_token)
+        print(
+            "\n"
+            "══════════════════════════════════════════════════\n"
+            "  DevBase 已就绪，可在浏览器中打开以下 URL：\n"
+            f"  {url}\n"
+            "══════════════════════════════════════════════════\n"
+        )
+
         try:
             window = webview.create_window(
                 title=window_title,

@@ -76,6 +76,12 @@ code {
   justify-content: center;
 }
 
+/* DemoPanel 撑满空态 */
+.workbench-empty:has(.demo-panel) {
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
 .empty-hero {
   display: flex;
   flex-direction: column;
@@ -905,6 +911,308 @@ code {
 }
 
 .bottom-panel-empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ============================================================
+ *  演示面板 — 空态交互测试区
+ * ============================================================ */
+
+.demo-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 16px 20px 8px;
+  overflow: hidden;
+}
+
+/* ---- Toast 浮层 ---- */
+
+.demo-toast-area {
+  position: fixed;
+  top: 60px;
+  right: 24px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.demo-toast {
+  padding: 8px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  font-size: 13px;
+  color: var(--ink);
+  animation: demo-toast-in 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes demo-toast-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ---- 信息条 ---- */
+
+.demo-info-bar {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.demo-info-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.demo-info-item svg {
+  color: var(--accent);
+}
+
+.demo-info-value {
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-info-label {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* ---- 滚动区 ---- */
+
+.demo-scroll {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  overflow-y: auto;
+}
+
+/* ---- 通用卡片 ---- */
+
+.demo-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.demo-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid transparent;
+  transition: background 100ms;
+}
+
+.demo-card.is-open .demo-card-head {
+  border-bottom-color: var(--line);
+}
+
+.demo-card-head:hover {
+  background: var(--surface-sunken);
+}
+
+.demo-card-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  place-items: center;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+}
+
+.demo-card-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.demo-card-count {
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-card-collapse {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.demo-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+/* ---- 字段行 ---- */
+
+.demo-field {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.demo-field-label {
+  min-width: 72px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* ---- 计数器 ---- */
+
+.demo-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.demo-counter-value {
+  min-width: 36px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 按钮 ---- */
+
+.demo-btn,
+.demo-btn-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 100ms;
+}
+
+.demo-btn:hover,
+.demo-btn-sm:hover {
+  background: var(--accent-hover);
+}
+
+.demo-btn-sm {
+  padding: 3px 10px;
+  background: var(--surface-sunken);
+  color: var(--ink);
+  font-size: 13px;
+  border: 1px solid var(--line);
+}
+
+.demo-btn-sm:hover {
+  background: var(--surface-fill);
+  color: var(--ink);
+}
+
+.demo-btn-ghost {
+  background: none;
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.demo-btn-ghost:hover {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+/* ---- 进度条 ---- */
+
+.demo-progress {
+  flex: 1;
+  min-width: 100px;
+  height: 6px;
+  background: var(--surface-sunken);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.demo-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 60ms linear;
+}
+
+/* ---- 卡片操作行 ---- */
+
+.demo-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---- 响应式网格 ---- */
+
+.demo-grid {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  transition: grid-template-columns 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.demo-grid-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--ink);
+  transition: transform 120ms;
+}
+
+.demo-grid-item:hover {
+  transform: translateY(-1px);
+}
+
+.demo-grid-dot {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.demo-grid-text {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.demo-empty-hint {
+  margin: 8px 0 0;
   color: var(--muted);
   font-size: 12px;
 }

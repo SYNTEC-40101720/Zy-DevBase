@@ -4,6 +4,7 @@ import { ArrowLeft, LayoutGrid, Monitor, Moon, Sun } from "lucide-react";
 import { RuntimeEventStream } from "../api/events";
 import { apiClient } from "../api/client";
 import { BottomPanel } from "../components/BottomPanel";
+import { DemoPanel } from "../components/DemoPanel";
 import { Sidebar } from "../components/Sidebar";
 import { StatusBar } from "../components/StatusBar";
 import { UpdateBanner } from "../components/UpdateBanner";
@@ -184,13 +185,17 @@ export default function App() {
               onApply={prepareUpdate}
               onDismiss={() => workbenchStore.patch({ updateStatus: "idle" })}
             />
-            <div className="empty-hero">
-              <div className="empty-hero-icon">
-                <LayoutGrid size={28} strokeWidth={1.4} />
+            {selectedToolDescriptor ? (
+              <div className="empty-hero">
+                <div className="empty-hero-icon">
+                  <LayoutGrid size={28} strokeWidth={1.4} />
+                </div>
+                <h2>{selectedToolDescriptor.title}</h2>
+                <p>{selectedToolDescriptor.subtitle ?? "选择一个工具开始工作。"}</p>
               </div>
-              <h2>{selectedToolDescriptor?.title ?? "工作台已就绪"}</h2>
-              <p>{selectedToolDescriptor?.subtitle ?? "选择一个工具开始工作。"}</p>
-            </div>
+            ) : (
+              <DemoPanel sidebarCollapsed={collapsed} sidebarWidth={sidebarWidth} />
+            )}
           </div>
         ) : (
           <div className="workbench settings-view">

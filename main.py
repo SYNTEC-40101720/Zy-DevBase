@@ -55,6 +55,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Use a local pywebview desktop window (the default).",
     )
+    mode.add_argument(
+        "--agent",
+        action="store_true",
+        help="Start the server for AI agent interaction via the VS Code integrated browser (no system browser).",
+    )
     parser.add_argument(
         "--reload",
         action="store_true",
@@ -137,11 +142,33 @@ def _open_browser_when_ready(
         print("服务未及时就绪，未自动打开浏览器。", file=sys.stderr)
 
 
+def _print_agent_url_when_ready(
+    host: str,
+    port: int,
+    stop_event: threading.Event,
+    token: str | None = None,
+) -> None:
+    """Wait for server readiness, then print an AI-ready URL banner."""
+    if _wait_for_server_ready(host, port, stop_event, token=token):
+        url = _browser_url(host, port, token)
+        print(
+            "\n"
+            "══════════════════════════════════════════════════\n"
+            "  DevBase Agent 模式已就绪\n"
+            "  AI 可通过 open_browser_page 打开以下 URL：\n"
+            f"  {url}\n"
+            "══════════════════════════════════════════════════\n"
+        )
+    elif not stop_event.is_set():
+        print("服务未及时就绪，Agent URL 未输出。", file=sys.stderr)
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
-    if not args.browser and args.reload:
-        parser.error("--reload 仅用于浏览器调试模式，请同时使用 --browser。")
+    agent_mode = args.agent
+    if not args.browser and not agent_mode and args.reload:
+        parser.error("--reload 仅用于浏览器或 Agent 模式，请同时使用 --browser 或 --agent。")
 
     try:
         static_dir = _require_frontend_build()
@@ -149,7 +176,7 @@ def main() -> None:
         print(error, file=sys.stderr)
         raise SystemExit(1) from error
 
-    if not args.browser:
+    if not args.browser and not agent_mode:
         from importlib import import_module
 
         desktop_launcher = import_module("devbase.desktop.launcher")
@@ -173,8 +200,17 @@ def main() -> None:
     os.environ["PLATFORM_STATIC_DIR"] = str(static_dir)
     os.environ["PLATFORM_LOCAL_TOKEN"] = local_token
     stop_event = threading.Event()
+
+    # ---- agent mode: no system browser, print AI-ready URL ----
     browser_thread: threading.Thread | None = None
-    if not args.no_browser:
+    if agent_mode:
+        browser_thread = threading.Thread(
+            target=_print_agent_url_when_ready,
+            args=(args.host, args.port, stop_event, local_token),
+            name="devbase-agent-url-printer",
+        )
+        browser_thread.start()
+    elif not args.no_browser:
         browser_thread = threading.Thread(
             target=_open_browser_when_ready,
             args=(args.host, args.port, stop_event, local_token),

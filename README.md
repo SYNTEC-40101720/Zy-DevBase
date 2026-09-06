@@ -96,6 +96,21 @@ python main.py --browser --reload     # 热更新，仅限浏览器模式
 python main.py --browser --no-browser  # 不自动开浏览器
 ```
 
+AI Agent 模式（给 AI 用 VS Code 内嵌浏览器交互）：
+
+```powershell
+python main.py --agent                 # 不开系统浏览器，终端输出带 token 的 URL
+python main.py --agent --reload        # 后端热重载
+```
+
+`--agent` 模式启动后不开任何浏览器，终端打印一个带 token 的 URL。AI 用 `open_browser_page` 在 VS Code Integrated Browser 中打开该 URL，即可通过 Playwright 工具链（`click_element`、`type_in_page`、`read_page`、`screenshot_page`）与页面交互，支持 DevTools 级调试和 DOM 快照。
+
+| 模式 | 命令 | 用途 |
+| --- | --- | --- |
+| 桌面窗口（默认） | `python main.py` 或 `--desktop` | 人用，pywebview 窗口 |
+| 系统浏览器 | `python main.py --browser` | 人用，系统浏览器调试 |
+| AI Agent | `python main.py --agent` | AI 用，VS Code 内嵌浏览器 |
+
 前端热更新时另开终端：
 
 ```powershell

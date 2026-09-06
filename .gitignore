@@ -13,3 +13,6 @@ dist/
 build/
 release/
 .pkg_tmp/
+
+.vscode/
+logs/
