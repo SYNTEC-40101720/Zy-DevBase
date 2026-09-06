@@ -60,12 +60,9 @@ class FakeUpdateManager:
     def progress(self) -> UpdateProgress:
         return self._progress
 
-    def updater_executable(self) -> Path:
-        return self.updater_path
-
-    def stamp_ready_process_id(self, process_id: int) -> Path:
+    def prepare_external_apply(self, process_id: int) -> tuple[Path, Path]:
         self.stamped_pid = process_id
-        return Path(self._progress.ready_file)
+        return self.updater_path, Path(self._progress.ready_file)
 
 
 def headers() -> dict[str, str]:
@@ -98,7 +95,7 @@ def test_apply_and_restart_spawns_updater_and_requests_shutdown(monkeypatch) -> 
         str(Path("C:/temp/ready.json")),
     ]
     assert spawned["kwargs"] == {
-        "cwd": str(manager.install_dir),
+        "cwd": str(manager.updater_path.parent),
         "close_fds": True,
         "stdin": updates.subprocess.DEVNULL,
         "stdout": updates.subprocess.DEVNULL,

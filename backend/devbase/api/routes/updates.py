@@ -62,20 +62,15 @@ def apply_and_restart(
         )
 
     try:
-        updater_executable = manager.updater_executable()
-    except RuntimeError as error:
-        raise HTTPException(status_code=409, detail=str(error)) from error
-
-    try:
         manager.stage()
-        ready_file = manager.stamp_ready_process_id(os.getpid())
+        updater_executable, ready_file = manager.prepare_external_apply(os.getpid())
     except (RuntimeError, OSError) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
 
     try:
         subprocess.Popen(
             [str(updater_executable), "--ready-file", str(ready_file)],
-            cwd=str(manager.install_dir),
+            cwd=str(updater_executable.parent),
             close_fds=True,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,

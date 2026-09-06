@@ -63,24 +63,29 @@ class UpdateManager:
         with self._lock:
             return self._progress
 
-    def stamp_ready_process_id(self, process_id: int) -> Path:
+    def prepare_external_apply(self, process_id: int) -> tuple[Path, Path]:
         with self._lock:
             ready = self._ready
             ready_file = self._ready_file
             if ready is None or ready_file is None:
                 raise RuntimeError("no staged update is ready")
+            if self.updater_name is None:
+                raise RuntimeError("updater executable is not configured")
+            staged_updater = ready.staged_dir / self.updater_name
+            if not staged_updater.is_file():
+                raise RuntimeError(
+                    f"staged updater executable not found: {staged_updater}"
+                )
+            runtime_dir = ready_file.parent / f"updater-runtime-{uuid4().hex}"
+            runtime_dir.mkdir(parents=True, exist_ok=False)
+            shutil.copy2(staged_updater, runtime_dir / self.updater_name)
+            staged_internal = ready.staged_dir / "_internal"
+            if staged_internal.is_dir():
+                shutil.copytree(staged_internal, runtime_dir / "_internal")
             ready = replace(ready, process_id=process_id)
             write_ready_file(ready_file, ready)
             self._ready = ready
-            return ready_file
-
-    def updater_executable(self) -> Path:
-        if self.updater_name is None:
-            raise RuntimeError("updater executable is not configured")
-        path = self.install_dir / self.updater_name
-        if not path.is_file():
-            raise RuntimeError(f"updater executable not found: {path}")
-        return path
+            return runtime_dir / self.updater_name, ready_file
 
     def check(self) -> UpdateCheckResult:
         self._set_progress("checking", 5, "checking for updates")

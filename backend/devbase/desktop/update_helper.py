@@ -111,6 +111,39 @@ def _same_volume(*paths: Path) -> bool:
     return len(drives) <= 1
 
 
+def _process_is_running(process_id: int) -> bool:
+    if sys.platform != "win32":
+        try:
+            os.kill(process_id, 0)
+        except OSError:
+            return False
+        return True
+
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    kernel32.GetExitCodeProcess.argtypes = [
+        wintypes.HANDLE,
+        ctypes.POINTER(wintypes.DWORD),
+    ]
+    kernel32.GetExitCodeProcess.restype = wintypes.BOOL
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel32.CloseHandle.restype = wintypes.BOOL
+    handle = kernel32.OpenProcess(0x1000, False, process_id)
+    if not handle:
+        return ctypes.get_last_error() != 87
+    exit_code = wintypes.DWORD()
+    try:
+        if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+            return True
+        return exit_code.value == 259
+    finally:
+        kernel32.CloseHandle(handle)
+
+
 def wait_for_process_exit(
     process_id: int,
     *,
@@ -119,9 +152,7 @@ def wait_for_process_exit(
 ) -> bool:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        try:
-            os.kill(process_id, 0)
-        except OSError:
+        if not _process_is_running(process_id):
             return True
         time.sleep(poll_seconds)
     return False

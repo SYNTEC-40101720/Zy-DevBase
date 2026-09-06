@@ -95,6 +95,12 @@ def test_ready_file_round_trip(tmp_path: Path) -> None:
     assert json.loads(path.read_text(encoding="utf-8"))["process_id"] == 123
 
 
+def test_wait_for_process_exit_accepts_missing_process() -> None:
+    from devbase.desktop import update_helper
+
+    assert update_helper.wait_for_process_exit(2**31 - 1, timeout=0.05, poll_seconds=0.01)
+
+
 def test_apply_preserves_user_data_and_cleans_backup(tmp_path: Path) -> None:
     install = tmp_path / "install"
     staged = tmp_path / "staged"
