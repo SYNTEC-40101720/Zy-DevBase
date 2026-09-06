@@ -8,7 +8,6 @@ from threading import Event, Thread
 from time import monotonic
 from typing import Any
 from urllib.error import URLError
-from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 import uvicorn
@@ -20,6 +19,7 @@ from devbase.application.lifecycle import (
     WindowCloseMode,
 )
 from devbase.desktop.native_bridge import NativeBridge
+from devbase.desktop.url_utils import build_local_url, format_url_host
 
 
 class DesktopLaunchError(RuntimeError):
@@ -47,22 +47,8 @@ def _load_webview() -> Any:
     return webview
 
 
-def _local_host(host: str) -> str:
-    return "127.0.0.1" if host in {"0.0.0.0", "::"} else host
-
-
-def _format_url_host(host: str) -> str:
-    local_host = _local_host(host)
-    if ":" in local_host and not local_host.startswith("["):
-        return f"[{local_host}]"
-    return local_host
-
-
 def _desktop_url(host: str, port: int, token: str | None = None) -> str:
-    url = f"http://{_format_url_host(host)}:{port}/"
-    if token:
-        url += "?" + urlencode({"token": token})
-    return url
+    return build_local_url(host, port, token)
 
 
 def _wait_for_server_ready(
@@ -74,7 +60,7 @@ def _wait_for_server_ready(
     token: str | None = None,
 ) -> bool:
     health_url = (
-        f"http://{_format_url_host(host)}:{port}/api/v1/health"
+        f"http://{format_url_host(host)}:{port}/api/v1/health"
     )
     deadline = monotonic() + timeout
 

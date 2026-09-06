@@ -2,22 +2,11 @@
 
 from __future__ import annotations
 
-from time import monotonic, sleep
-
 from devbase.api.app import create_app
 from devbase.application.job_runtime import JobRuntime
 from devbase.application.lifecycle import LifecyclePolicy, WindowCloseMode
 from devbase.domain.job import JobStatus
-
-
-def wait_for_status(runtime: JobRuntime, expected: JobStatus) -> None:
-    deadline = monotonic() + 2
-    while monotonic() < deadline:
-        job = runtime.current_job()
-        if job is not None and job.status is expected:
-            return
-        sleep(0.005)
-    raise AssertionError(f"job did not reach {expected}")
+from helpers import wait_for_status
 
 
 def test_stop_on_close_cancels_running_job() -> None:

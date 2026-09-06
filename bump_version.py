@@ -177,8 +177,8 @@ def collect_versions(root: Path = ROOT_DIR) -> dict[str, Version]:
             root / "web" / "package-lock.json"
         ),
         "version_info.txt": _version_from_version_info(root / "version_info.txt"),
-        "web/src/app/App.tsx": _version_from_display_version(
-            root / "web" / "src" / "app" / "App.tsx",
+        "web/src/components/SettingsView.tsx": _version_from_display_version(
+            root / "web" / "src" / "components" / "SettingsView.tsx",
             canonical,
         ),
         "web/src/app/App.tsx APP_VERSION": _version_from_regex(
@@ -210,7 +210,7 @@ def _version_from_display_version(path: Path, canonical: Version) -> Version:
             f"expected exactly one version field in {path}, found {len(matches)}"
         )
     value = matches[0].strip()
-    return canonical if value == "{APP_VERSION}" else Version.parse(value)
+    return canonical if value in {"{APP_VERSION}", "{version}"} else Version.parse(value)
 
 
 def _version_from_app(path: Path, canonical: Version) -> Version:

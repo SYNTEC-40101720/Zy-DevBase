@@ -1,5 +1,5 @@
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from threading import Condition, RLock
 from time import monotonic
 
@@ -30,16 +30,7 @@ class InMemoryEventBus:
     def publish(self, event: RuntimeEvent) -> RuntimeEvent:
         with self._condition:
             self._next_sequence += 1
-            committed = RuntimeEvent(
-                sequence=self._next_sequence,
-                event_id=event.event_id,
-                job_id=event.job_id,
-                kind=event.kind,
-                status=event.status,
-                progress=event.progress,
-                message=event.message,
-                created_at=event.created_at,
-            )
+            committed = replace(event, sequence=self._next_sequence)
             if (
                 committed.kind is EventKind.PROGRESS
                 and self._events

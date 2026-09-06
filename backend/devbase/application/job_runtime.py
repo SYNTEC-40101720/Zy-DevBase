@@ -224,7 +224,7 @@ class JobRuntime:
 
             ctx = TaskContext(
                 job_id=job_id,
-                kind=self._active.kind if self._active else "",
+                kind=job.kind,
                 cancel_event=cancel_event,
                 report=report,
             )

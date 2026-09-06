@@ -1,5 +1,3 @@
-from time import monotonic, sleep
-
 import pytest
 
 from devbase.application.errors import JobAlreadyRunningError
@@ -12,16 +10,7 @@ from devbase.application.lifecycle import (
 )
 from devbase.domain.events import EventKind, RuntimeEvent
 from devbase.domain.job import JobPhase, JobStatus, JobTrigger
-
-
-def wait_for_status(runtime: JobRuntime, expected: JobStatus) -> None:
-    deadline = monotonic() + 2
-    while monotonic() < deadline:
-        job = runtime.current_job()
-        if job is not None and job.status is expected:
-            return
-        sleep(0.005)
-    raise AssertionError(f"job did not reach {expected}")
+from helpers import wait_for_status
 
 
 def test_demo_job_completes_and_keeps_lifecycle_events() -> None:

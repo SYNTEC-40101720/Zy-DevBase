@@ -1,5 +1,4 @@
 from pathlib import Path
-from time import monotonic, sleep
 
 import pytest
 from fastapi import WebSocketDisconnect
@@ -9,22 +8,13 @@ from devbase.api.app import create_app
 from devbase.application.job_runtime import JobRuntime
 from devbase.application.lifecycle import LifecyclePolicy, WindowCloseMode
 from devbase.domain.job import JobStatus
+from helpers import wait_for_terminal
 
 TEST_TOKEN = "test-token"
 
 
 def _auth_headers() -> dict[str, str]:
     return {"X-Local-Token": TEST_TOKEN}
-
-
-def wait_for_terminal(runtime: JobRuntime) -> None:
-    deadline = monotonic() + 2
-    while monotonic() < deadline:
-        job = runtime.current_job()
-        if job is not None and job.status.is_terminal:
-            return
-        sleep(0.005)
-    raise AssertionError("job did not become terminal")
 
 
 def test_static_frontend_does_not_mask_api(tmp_path: Path) -> None:

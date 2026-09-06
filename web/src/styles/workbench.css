@@ -44,10 +44,6 @@ code {
   background: var(--canvas);
 }
 
-.app-frame[data-dragging] {
-  transition: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .app-frame {
     transition: none;
@@ -913,6 +909,46 @@ code {
 .bottom-panel-empty {
   color: var(--muted);
   font-size: 12px;
+}
+
+.event-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event-item {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 0;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+}
+
+.event-time,
+.event-progress {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.event-label {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.event-message {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ============================================================
