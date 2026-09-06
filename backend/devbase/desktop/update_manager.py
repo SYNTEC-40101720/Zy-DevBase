@@ -63,6 +63,25 @@ class UpdateManager:
         with self._lock:
             return self._progress
 
+    def stamp_ready_process_id(self, process_id: int) -> Path:
+        with self._lock:
+            ready = self._ready
+            ready_file = self._ready_file
+            if ready is None or ready_file is None:
+                raise RuntimeError("no staged update is ready")
+            ready = replace(ready, process_id=process_id)
+            write_ready_file(ready_file, ready)
+            self._ready = ready
+            return ready_file
+
+    def updater_executable(self) -> Path:
+        if self.updater_name is None:
+            raise RuntimeError("updater executable is not configured")
+        path = self.install_dir / self.updater_name
+        if not path.is_file():
+            raise RuntimeError(f"updater executable not found: {path}")
+        return path
+
     def check(self) -> UpdateCheckResult:
         self._set_progress("checking", 5, "checking for updates")
         result = self.client.check(self.current_version)

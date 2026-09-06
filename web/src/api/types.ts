@@ -80,6 +80,7 @@ export type UpdateStatus =
   | "up_to_date"
   | "downloading"
   | "applying"
+  | "restarting"
   | "succeeded"
   | "rollback"
   | "error";

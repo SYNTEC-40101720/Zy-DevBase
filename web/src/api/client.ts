@@ -103,6 +103,10 @@ export class ApiClient {
     return this.request<UpdateProgressResponse>("/updates/apply", { method: "POST" });
   }
 
+  async applyAndRestart(): Promise<UpdateProgressResponse> {
+    return this.request<UpdateProgressResponse>("/updates/apply-and-restart", { method: "POST" });
+  }
+
   async updateProgress(signal?: AbortSignal): Promise<UpdateProgressResponse> {
     return this.request<UpdateProgressResponse>("/updates/progress", { signal });
   }

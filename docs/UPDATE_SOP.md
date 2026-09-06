@@ -22,10 +22,11 @@
 ## 客户端流程
 
 1. `/api/v1/updates/check` 只查询固定 GitHub 仓库的最新稳定 Release，并用数字版本比较。
-2. `/api/v1/updates/apply` 下载到临时目录，校验 SHA-256，安全解压并生成 `ready.json`。
-3. 独立 updater 从临时目录启动。`ready.json` 中包含 `process_id` 时会轮询等待主进程退出后才执行替换；`process_id` 为空则跳过等待。
-4. updater 将 staging 移到原安装路径，恢复 `config/`、`logs/`，启动新主程序。
+2. `/api/v1/updates/apply` 仅执行下载、SHA-256 校验、安全解压并生成 `ready.json`，适用于浏览器/Agent 调试或手工分步流程。
+3. 桌面模式使用 `/api/v1/updates/apply-and-restart`：先验证 bundled updater 存在，再执行 stage；将当前主进程 PID 原子写入 `ready.json`，启动 `SYNTEC_DevBase-updater.exe --ready-file <path>`，响应发送后关闭桌面窗口并停止 API 进程。
+4. 独立 updater 读取 `ready.json`，轮询等待 PID 退出（30 秒上限）后，将 staging 移到原安装路径，恢复 `config/`、`logs/`，启动新主程序。
 5. 替换或数据恢复失败时，删除不完整的新目录并恢复 backup；成功后删除 backup、ready 文件和临时下载目录。
+6. `PLATFORM_UPDATE_TIMEOUT` 可覆盖下载 socket 超时（默认 60 秒，最小 5 秒）；`PLATFORM_UPDATE_MAX_BYTES` 可覆盖资产大小上限（默认 512 MiB，最小 1 MiB）。
 
 ## 验收
 

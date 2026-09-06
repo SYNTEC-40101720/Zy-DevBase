@@ -1,4 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+import os
+import subprocess
+import sys
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 
 from devbase.api.dependencies import require_local_token
 from devbase.api.schemas import (
@@ -41,6 +45,53 @@ def apply_update(request: Request) -> UpdateProgressResponse:
         manager.stage()
     except (RuntimeError, OSError) as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
+    return update_progress_response(manager.progress())
+
+
+@router.post("/apply-and-restart", response_model=UpdateProgressResponse)
+def apply_and_restart(
+    request: Request,
+    background_tasks: BackgroundTasks,
+) -> UpdateProgressResponse:
+    manager = _manager(request)
+    shutdown = getattr(request.app.state, "request_shutdown", None)
+    if shutdown is None:
+        raise HTTPException(
+            status_code=409,
+            detail="apply-and-restart is available only in desktop mode",
+        )
+
+    try:
+        updater_executable = manager.updater_executable()
+    except RuntimeError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+    try:
+        manager.stage()
+        ready_file = manager.stamp_ready_process_id(os.getpid())
+    except (RuntimeError, OSError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+    try:
+        subprocess.Popen(
+            [str(updater_executable), "--ready-file", str(ready_file)],
+            cwd=str(manager.install_dir),
+            close_fds=True,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=(
+                subprocess.DETACHED_PROCESS
+                if sys.platform == "win32"
+                else 0
+            ),
+        )
+    except RuntimeError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except OSError as error:
+        raise HTTPException(status_code=500, detail=f"failed to start updater: {error}") from error
+
+    background_tasks.add_task(shutdown)
     return update_progress_response(manager.progress())
 
 

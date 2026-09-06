@@ -141,15 +141,9 @@ export default function App() {
   };
   const prepareUpdate = () => {
     workbenchStore.patch({ updateStatus: "downloading" });
-    apiClient.applyUpdate()
-      .then((result) => {
-        workbenchStore.patch({
-          updateStatus: result.rollback
-            ? "rollback"
-            : result.status === "succeeded"
-              ? "succeeded"
-              : "available",
-        });
+    apiClient.applyAndRestart()
+      .then(() => {
+        workbenchStore.patch({ updateStatus: "restarting" });
       })
       .catch(() => workbenchStore.patch({ updateStatus: "error" }));
   };

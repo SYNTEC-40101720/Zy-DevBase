@@ -16,6 +16,7 @@ from devbase.application.update_checker import (
     UpdateConfig,
 )
 from devbase.desktop.update_manager import UpdateManager
+from devbase.desktop.update_helper import read_ready_file
 
 
 class FakeClient:
@@ -64,6 +65,39 @@ def make_archive(path: Path) -> Path:
             b"updater",
         )
     return path
+
+
+def test_manager_stamps_process_id_and_resolves_updater(tmp_path: Path) -> None:
+    source = make_archive(tmp_path / "source.zip")
+    install = tmp_path / "install"
+    install.mkdir()
+    updater = install / "SYNTEC_DevBase-updater.exe"
+    updater.write_bytes(b"updater")
+    manager = UpdateManager(
+        "1.0.0",
+        client=FakeClient(source),
+        install_dir=install,
+        update_root=tmp_path / "updates",
+    )
+
+    manager.stage()
+    ready_file = manager.stamp_ready_process_id(123)
+
+    assert ready_file.is_file()
+    assert read_ready_file(ready_file).process_id == 123
+    assert manager.updater_executable() == updater
+
+
+def test_manager_updater_executable_requires_file(tmp_path: Path) -> None:
+    manager = UpdateManager(
+        "1.0.0",
+        client=FakeClient(make_archive(tmp_path / "source.zip")),
+        install_dir=tmp_path / "install",
+        update_root=tmp_path / "updates",
+    )
+
+    with pytest.raises(RuntimeError, match="not found"):
+        manager.updater_executable()
 
 
 def test_manager_stage_writes_ready_progress(tmp_path: Path) -> None:

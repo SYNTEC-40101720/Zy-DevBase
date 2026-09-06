@@ -136,6 +136,7 @@ Vite 开发服务器默认在 `http://localhost:5173`，会把 `/api` 和 WebSoc
 | GET | `/tools` | 已注册工具清单（需 `X-Local-Token`，供前端导航渲染） |
 | GET | `/updates/check` | 检查固定 GitHub Release（需 `X-Local-Token`） |
 | POST | `/updates/apply` | 下载、校验并生成 ready 更新协议（需 token） |
+| POST | `/updates/apply-and-restart` | 桌面模式下载、校验并启动独立 updater，随后重启应用（需 token） |
 | GET | `/updates/progress` | 查询更新进度（需 `X-Local-Token`） |
 
 运行时只允许一个非终态任务。任务通过后台线程执行，支持完成、取消、冲突检测和失败状态。事件总线合并相邻的同任务进度事件，重放历史默认最多 512 个事件；重连时以当前任务快照为权威状态。

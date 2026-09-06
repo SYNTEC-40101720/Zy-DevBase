@@ -194,6 +194,15 @@ def run_desktop(
             )
             if window is None:
                 raise RuntimeError("pywebview 未创建窗口")
+
+            def request_shutdown() -> None:
+                server.should_exit = True
+                try:
+                    window.destroy()
+                except Exception:
+                    pass
+
+            app.state.request_shutdown = request_shutdown
             window.events.closed += on_closed
             webview.start(gui="edgechromium", debug=False)
             if (
@@ -215,4 +224,6 @@ def run_desktop(
     finally:
         stop_event.set()
         server.should_exit = True
+        if hasattr(app.state, "request_shutdown"):
+            app.state.request_shutdown = None
         server_thread.join()

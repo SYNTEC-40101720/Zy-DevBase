@@ -20,7 +20,9 @@ export function UpdateBanner({ status, version, onApply, onDismiss }: UpdateBann
         ? { icon: <LoaderCircle className="status-spin" size={15} />, text: "正在准备更新" }
         : status === "applying"
           ? { icon: <LoaderCircle className="status-spin" size={15} />, text: "正在应用更新" }
-          : status === "succeeded"
+          : status === "restarting"
+            ? { icon: <LoaderCircle className="status-spin" size={15} />, text: "更新已就绪，应用正在重启" }
+            : status === "succeeded"
             ? { icon: <Check size={15} />, text: "更新已完成" }
             : status === "rollback"
               ? { icon: <TriangleAlert size={15} />, text: "更新失败，已回滚" }

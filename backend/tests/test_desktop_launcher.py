@@ -39,13 +39,18 @@ class FakeClosedEvent:
 class FakeWindow:
     def __init__(self) -> None:
         self.events = type("Events", (), {"closed": FakeClosedEvent()})()
+        self.destroy_calls = 0
 
+    def destroy(self) -> None:
+        self.destroy_calls += 1
 
 class FakeWebview:
     def __init__(self) -> None:
         self.window = FakeWindow()
         self.window_config = None
         self.start_config = None
+        self.app = None
+        self.request_shutdown = None
 
     def create_window(self, **config):
         self.window_config = config
@@ -53,7 +58,10 @@ class FakeWebview:
 
     def start(self, **config) -> None:
         self.start_config = config
-        self.window.events.closed.handler()
+        if self.request_shutdown is not None:
+            self.request_shutdown()
+        else:
+            self.window.events.closed.handler()
 
 
 def test_missing_pywebview_has_installation_guidance(monkeypatch) -> None:
@@ -165,6 +173,38 @@ def test_desktop_configures_window_and_stops_cancelled_job(tmp_path) -> None:
     assert servers[0].config.port == 8765
     assert servers[0].should_exit is True
     assert servers[0].stopped.is_set()
+    request_shutdown = created["app"].state.request_shutdown
+    assert request_shutdown is None
+
+
+def test_desktop_request_shutdown_stops_server_and_destroys_window(tmp_path) -> None:
+    webview = FakeWebview()
+    created = {}
+    servers = []
+
+    def app_factory(*, static_dir, lifecycle_policy):
+        app = create_app(static_dir=static_dir, lifecycle_policy=lifecycle_policy)
+        created["app"] = app
+        webview.request_shutdown = lambda: app.state.request_shutdown()
+        return app
+
+    def server_factory(config):
+        server = FakeServer(config)
+        servers.append(server)
+        return server
+
+    run_desktop(
+        tmp_path,
+        app_factory=app_factory,
+        server_factory=server_factory,
+        webview_module=webview,
+        readiness_waiter=lambda *_args: True,
+    )
+
+    assert servers[0].should_exit is True
+    assert servers[0].stopped.is_set()
+    assert webview.window.destroy_calls == 1
+    assert created["app"].state.request_shutdown is None
 
 
 def test_desktop_continue_mode_waits_for_running_job(tmp_path) -> None:
