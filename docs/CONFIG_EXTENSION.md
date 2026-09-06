@@ -149,21 +149,24 @@ new_tax = config_manager.get("invoice", "tax_number", fallback="")
 ## 与 DPAPI 密钥存储配合
 
 业务 section 中的敏感字段（如 API Key）不应明文存储，应使用
-`secret_store` 加密：
+`SecretStore` 加密：
 
 ```python
-from devbase.secret_store import encrypt, decrypt
+from devbase.secret_store import SecretStore
 
-# 配置文件中只存加密后的值
-config_manager.set("ai_audit", "api_key_ref", f"dpapi:{encrypt(raw_key)}")
+store = SecretStore()  # Windows 上使用 DPAPI
+
+# 配置文件中只存加密后的值（自动加 "dpapi:" 前缀）
+config_manager.set("ai_audit", "api_key_ref", store.protect(raw_key))
 
 # 读取时解密
-encrypted_ref = config_manager.get("ai_audit", "api_key_ref", fallback="")
-if encrypted_ref and encrypted_ref.startswith("dpapi:"):
-    raw_key = decrypt(encrypted_ref.removeprefix("dpapi:"))
+protected_ref = config_manager.get("ai_audit", "api_key_ref", fallback="")
+if protected_ref:
+    raw_key = store.unprotect(protected_ref)
 ```
 
-非 Windows 环境会自动降级为 base64（仅开发用，不安全）。
+非 Windows 环境默认抛 `SecretStoreUnavailableError`；仅在测试场景
+显式传 `allow_insecure_fallback=True` 可降级为 base64（不安全，仅开发用）。
 
 ---
 

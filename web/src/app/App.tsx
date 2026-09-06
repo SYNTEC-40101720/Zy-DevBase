@@ -37,7 +37,7 @@ export default function App() {
   const [view, setView] = useState<View>("workbench");
   const [collapsed, setCollapsed] = useState(false);
   const [wideWidth, setWideWidth] = useState(264);
-  const { tools, selectedTool, connection, bottomPanelOpen, updateStatus } = useWorkbenchStore();
+  const { tools, selectedTool, connection, bottomPanelOpen, updateStatus, events } = useWorkbenchStore();
   const selectedToolDescriptor = tools.find((tool) => tool.kind === selectedTool);
   const [theme, setTheme] = useState<ThemeMode>(() => {
     return (localStorage.getItem("theme") as ThemeMode) || "system";
@@ -60,8 +60,8 @@ export default function App() {
 
     const stream = new RuntimeEventStream(apiClient, {
       onStatus: (status) => workbenchStore.patch({ connection: status }),
-      onSnapshot: () => undefined,
-      onEvent: () => undefined,
+      onSnapshot: (snapshot) => workbenchStore.setSnapshot(snapshot),
+      onEvent: (event) => workbenchStore.pushEvent(event),
     });
     stream.connect();
     return () => {
@@ -285,7 +285,7 @@ export default function App() {
                       </div>
                       <div className="settings-kv-row">
                         <dt>版本</dt>
-                        <dd>0.3.3</dd>
+                        <dd>{APP_VERSION}</dd>
                       </div>
                       <div className="settings-kv-row">
                         <dt>技术栈</dt>
@@ -308,6 +308,7 @@ export default function App() {
         {bottomPanelOpen && (
           <BottomPanel
             connection={connection}
+            events={events}
             onClose={() => workbenchStore.patch({ bottomPanelOpen: false })}
           />
         )}

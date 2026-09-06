@@ -1,6 +1,12 @@
 import { useSyncExternalStore } from "react";
 
-import type { ConnectionStatus, ToolDescriptor, UpdateStatus } from "../api/types";
+import type {
+  ConnectionStatus,
+  JobResponse,
+  RuntimeEvent,
+  ToolDescriptor,
+  UpdateStatus,
+} from "../api/types";
 
 export interface WorkbenchState {
   tools: ToolDescriptor[];
@@ -8,9 +14,13 @@ export interface WorkbenchState {
   connection: ConnectionStatus;
   bottomPanelOpen: boolean;
   updateStatus: UpdateStatus;
+  currentJob: JobResponse | null;
+  events: RuntimeEvent[];
 }
 
 type Listener = () => void;
+
+const MAX_EVENTS = 200;
 
 const initialState: WorkbenchState = {
   tools: [],
@@ -18,6 +28,8 @@ const initialState: WorkbenchState = {
   connection: "idle",
   bottomPanelOpen: false,
   updateStatus: "idle",
+  currentJob: null,
+  events: [],
 };
 
 let state = initialState;
@@ -33,6 +45,33 @@ export const workbenchStore = {
   },
   patch(patch: Partial<WorkbenchState>): void {
     state = { ...state, ...patch };
+    listeners.forEach((listener) => listener());
+  },
+
+  setSnapshot(snapshot: { job: JobResponse | null; events: RuntimeEvent[] }): void {
+    const eventsBySequence = new Map(
+      state.events.map((event) => [event.sequence, event]),
+    );
+    snapshot.events.forEach((event) => eventsBySequence.set(event.sequence, event));
+    const events = [...eventsBySequence.values()]
+      .sort((left, right) => left.sequence - right.sequence)
+      .slice(-MAX_EVENTS);
+    state = { ...state, currentJob: snapshot.job, events };
+    listeners.forEach((listener) => listener());
+  },
+
+  pushEvent(event: RuntimeEvent): void {
+    const events = [...state.events, event].slice(-MAX_EVENTS);
+    const currentJob = state.currentJob?.id === event.job_id
+      ? {
+          ...state.currentJob,
+          status: event.status,
+          progress: event.progress,
+          message: event.message,
+          updated_at: event.created_at,
+        }
+      : state.currentJob;
+    state = { ...state, currentJob, events };
     listeners.forEach((listener) => listener());
   },
 };

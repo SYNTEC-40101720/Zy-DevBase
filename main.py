@@ -163,9 +163,9 @@ def _print_agent_url_when_ready(
         print("服务未及时就绪，Agent URL 未输出。", file=sys.stderr)
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     agent_mode = args.agent
     if not args.browser and not agent_mode and args.reload:
         parser.error("--reload 仅用于浏览器或 Agent 模式，请同时使用 --browser 或 --agent。")

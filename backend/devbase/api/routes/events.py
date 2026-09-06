@@ -4,7 +4,7 @@ from contextlib import suppress
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from devbase.api.dependencies import validate_websocket_token
-from devbase.api.schemas import event_response, snapshot_response
+from devbase.api.schemas import event_response, health_response, snapshot_response
 
 router = APIRouter(tags=["events"])
 
@@ -26,18 +26,15 @@ async def events(websocket: WebSocket) -> None:
         await websocket.send_json(
             {
                 "type": "health",
-                "data": {
-                    "status": "ok",
-                    "service": "devbase",
-                    "active_job_id": (
+                "data": health_response(
+                    service="devbase",
+                    active_job_id=(
                         None
                         if initial_snapshot.job is None
                         else initial_snapshot.job.job_id
                     ),
-                    "window_close_mode": (
-                        websocket.app.state.window_lifecycle.policy.close_mode.value
-                    ),
-                },
+                    close_mode=websocket.app.state.window_lifecycle.policy.close_mode,
+                ).model_dump(mode="json"),
             }
         )
         await websocket.send_json(

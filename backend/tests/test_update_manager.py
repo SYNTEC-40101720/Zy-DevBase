@@ -51,6 +51,11 @@ class FakeClient:
         return target
 
 
+class FailingDownloadClient(FakeClient):
+    def download_asset(self, _asset, _destination):
+        raise OSError("download failed")
+
+
 def make_archive(path: Path) -> Path:
     with zipfile.ZipFile(path, "w") as archive:
         archive.writestr("SYNTEC_DevBase/SYNTEC_DevBase.exe", b"new")
@@ -108,3 +113,46 @@ def test_manager_apply_requires_staged_update(tmp_path: Path) -> None:
     )
     with pytest.raises(RuntimeError, match="staged"):
         manager.apply()
+
+
+def test_manager_stage_failure_records_failed_progress(tmp_path: Path) -> None:
+    source = make_archive(tmp_path / "source.zip")
+    manager = UpdateManager(
+        "1.0.0",
+        client=FailingDownloadClient(source),
+        install_dir=tmp_path / "install",
+        update_root=tmp_path / "updates",
+    )
+
+    with pytest.raises(OSError, match="download failed"):
+        manager.stage()
+
+    progress = manager.progress()
+    assert progress.status == "failed"
+    assert progress.error == "download failed"
+    assert progress.ready_file is None
+
+
+def test_manager_apply_failure_records_rollback(tmp_path: Path) -> None:
+    source = make_archive(tmp_path / "source.zip")
+    install = tmp_path / "install"
+    install.mkdir()
+    (install / "SYNTEC_DevBase.exe").write_bytes(b"old")
+    manager = UpdateManager(
+        "1.0.0",
+        client=FakeClient(source),
+        install_dir=install,
+        update_root=tmp_path / "updates",
+    )
+    manager.stage()
+
+    with pytest.raises(RuntimeError, match="rolled back"):
+        manager.apply(
+            restart=lambda _path: (_ for _ in ()).throw(RuntimeError("restart failed")),
+        )
+
+    progress = manager.progress()
+    assert progress.status == "failed"
+    assert progress.rollback is True
+    assert progress.error is not None
+    assert (install / "SYNTEC_DevBase.exe").read_bytes() == b"old"

@@ -53,5 +53,6 @@ def test_main_missing_frontend_exits_1(
 ) -> None:
     """main() should raise FileNotFoundError when frontend build is missing."""
     monkeypatch.setattr(main_module, "FRONTEND_DIST_DIR", tmp_path)
-    with pytest.raises(FileNotFoundError, match="index.html"):
-        main_module.main()
+    with pytest.raises(SystemExit) as error:
+        main_module.main([])
+    assert error.value.code == 1

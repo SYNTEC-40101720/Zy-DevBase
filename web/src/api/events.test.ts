@@ -49,6 +49,8 @@ function makeClient(): ApiClient {
 }
 
 describe("RuntimeEventStream — cursor reconnect", () => {
+  const originalWebSocket = globalThis.WebSocket;
+
   beforeEach(() => {
     FakeWebSocket.instances = [];
     (globalThis as unknown as { WebSocket: typeof FakeWebSocket }).WebSocket =
@@ -57,12 +59,17 @@ describe("RuntimeEventStream — cursor reconnect", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    globalThis.WebSocket = originalWebSocket;
   });
 
   it("reconnects with the last cursor after a drop", async () => {
     vi.useFakeTimers();
     const client = makeClient();
-    const stream = new RuntimeEventStream(client, { reconnectDelayMs: 100 });
+    const statusSpy = vi.fn();
+    const stream = new RuntimeEventStream(client, {
+      reconnectDelayMs: 100,
+      onStatus: statusSpy,
+    });
 
     stream.connect(0);
     const ws1 = FakeWebSocket.instances[0];
@@ -93,8 +100,6 @@ describe("RuntimeEventStream — cursor reconnect", () => {
     expect(stream.eventCursor).toBe(6);
 
     // Drop connection; reconnect is scheduled
-    const statusSpy = vi.fn();
-    stream.options.onStatus = statusSpy;
     ws1.fireClose(1006);
     expect(statusSpy).toHaveBeenCalledWith("disconnected");
 

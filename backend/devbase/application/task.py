@@ -1,9 +1,11 @@
-"""Task protocol, context, and registry — the plugin boundary for new tools.
+"""Task protocol and context — the plugin boundary for new tools.
 
-A tool plugs its own logic into the runtime by registering a ``Task``
-callable. It never touches ``JobRuntime`` or the API/desktop layers.
+A tool plugs its own logic into the runtime by registering a
+``ToolDescriptor`` whose ``task`` field is a ``Task`` callable. It never
+touches ``JobRuntime`` or the API/desktop layers.
 
-    from devbase.application.task import TaskContext, TaskRegistry
+    from devbase.application.manifest import ToolDescriptor, ToolRegistry
+    from devbase.application.task import TaskContext
 
     def my_task(ctx: TaskContext) -> dict:
         for i in range(10):
@@ -13,7 +15,13 @@ callable. It never touches ``JobRuntime`` or the API/desktop layers.
             time.sleep(0.1)
         return {"done": True}
 
-    registry.register("my_tool", my_task)
+    registry.register(ToolDescriptor(
+        kind="my_tool",
+        title="My Tool",
+        group="tool",
+        glyph="play",
+        task=my_task,
+    ))
 
 The runtime creates the ``TaskContext`` and passes it in; task bodies only
 report domain progress and check cancellation.
@@ -72,30 +80,6 @@ class TaskNotFoundError(KeyError):
         self.kind = kind
 
 
-class TaskRegistry:
-    """Maps ``kind`` strings to ``Task`` callables.
-
-    New tools register their task at startup; the runtime looks one up by
-    kind when ``POST /jobs/start`` arrives.
-    """
-
-    def __init__(self) -> None:
-        self._tasks: dict[str, Task] = {}
-
-    def register(self, kind: str, task: Task) -> None:
-        if kind in self._tasks:
-            raise ValueError(f"task kind already registered: {kind!r}")
-        self._tasks[kind] = task
-
-    def get(self, kind: str) -> Task:
-        if kind not in self._tasks:
-            raise TaskNotFoundError(kind)
-        return self._tasks[kind]
-
-    def kinds(self) -> list[str]:
-        return sorted(self._tasks)
-
-
-__all__ = ["Task", "TaskContext", "TaskRegistry", "TaskNotFoundError"]
+__all__ = ["Task", "TaskContext", "TaskNotFoundError"]
 
 

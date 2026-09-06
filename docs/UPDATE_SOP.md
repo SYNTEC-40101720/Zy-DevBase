@@ -23,7 +23,7 @@
 
 1. `/api/v1/updates/check` 只查询固定 GitHub 仓库的最新稳定 Release，并用数字版本比较。
 2. `/api/v1/updates/apply` 下载到临时目录，校验 SHA-256，安全解压并生成 `ready.json`。
-3. 独立 updater 从临时目录启动，等待主进程退出，再把旧安装目录移动到同卷 backup。
+3. 独立 updater 从临时目录启动。`ready.json` 中包含 `process_id` 时会轮询等待主进程退出后才执行替换；`process_id` 为空则跳过等待。
 4. updater 将 staging 移到原安装路径，恢复 `config/`、`logs/`，启动新主程序。
 5. 替换或数据恢复失败时，删除不完整的新目录并恢复 backup；成功后删除 backup、ready 文件和临时下载目录。
 

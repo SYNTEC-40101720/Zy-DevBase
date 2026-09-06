@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from devbase.application.lifecycle import WindowCloseMode
 from devbase.application.manifest import ToolDescriptor
@@ -35,7 +35,7 @@ class StartJobRequest(BaseModel):
     """
 
     kind: str = "demo_long_task"
-    input: dict[str, Any] = {}
+    input: dict[str, Any] = Field(default_factory=dict)
 
 
 class ToolDescriptorResponse(BaseModel):
@@ -102,6 +102,19 @@ class SnapshotResponse(BaseModel):
     job: JobResponse | None
     events: list[EventResponse]
     event_cursor: int
+
+
+def health_response(
+    *,
+    service: str,
+    active_job_id: str | None,
+    close_mode: WindowCloseMode,
+) -> HealthResponse:
+    return HealthResponse(
+        service=service,
+        active_job_id=active_job_id,
+        window_close_mode=close_mode,
+    )
 
 
 def job_response(job: JobSnapshot | None) -> JobResponse | None:

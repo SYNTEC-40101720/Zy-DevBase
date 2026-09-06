@@ -17,7 +17,8 @@
 ### 原则
 
 1. **不修改 DevBase 基类** — 派生项目创建子类或组合，不改动 `native_bridge.py`
-2. **方法名用 `@window.expose` 装饰** — 否则前端 JS 无法调用
+2. **pywebview 自动暴露 public 方法** — `js_api=` 参数接收的对象，其所有
+   public 方法自动出现在 `window.pywebview.api` 上，无需手动装饰
 3. **返回 JSON 可序列化值** — pywebview 通过 JSON 序列化传值
 4. **业务回调用注入** — 目录选择器、打开器等通过构造函数注入，便于测试
 
@@ -102,14 +103,18 @@ class InvoiceBridgeAdapter:
 
 ### 在 Launcher 中注册扩展 Bridge
 
+`run_desktop` 函数接受 `native_bridge` keyword 参数，传入自定义子类即可：
+
 ```python
-from devbase.desktop.launcher import Launcher
+from devbase.desktop.launcher import run_desktop
 from my_project.invoice_native_bridge import InvoiceNativeBridge
 
-launcher = Launcher()
-# 覆盖默认的 NativeBridge
-launcher._native_bridge = InvoiceNativeBridge()
-launcher.start()
+run_desktop(
+    static_dir=static_dir,
+    host=host,
+    port=port,
+    native_bridge=InvoiceNativeBridge(),
+)
 ```
 
 pywebview 会自动将 `NativeBridge` 子类中所有公开方法暴露到

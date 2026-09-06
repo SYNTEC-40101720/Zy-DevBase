@@ -157,8 +157,9 @@ def _version_from_version_info(path: Path) -> Version:
 
 
 def collect_versions(root: Path = ROOT_DIR) -> dict[str, Version]:
+    canonical = _version_from_version_py(root)
     return {
-        "version.py": _version_from_version_py(root),
+        "version.py": canonical,
         "backend/pyproject.toml": _version_from_regex(
             root / "backend" / "pyproject.toml",
             r"^version\s*=\s*\"([^\"]+)\"\s*$",
@@ -169,16 +170,16 @@ def collect_versions(root: Path = ROOT_DIR) -> dict[str, Version]:
         ),
         "backend/devbase/api/app.py": _version_from_app(
             root / "backend" / "devbase" / "api" / "app.py",
-            _version_from_version_py(root),
+            canonical,
         ),
         "web/package.json": _version_from_package(root / "web" / "package.json"),
         "web/package-lock.json": _version_from_lock(
             root / "web" / "package-lock.json"
         ),
         "version_info.txt": _version_from_version_info(root / "version_info.txt"),
-        "web/src/app/App.tsx": _version_from_regex(
+        "web/src/app/App.tsx": _version_from_display_version(
             root / "web" / "src" / "app" / "App.tsx",
-            r"<dt>版本</dt>\s*<dd>([^<]+)</dd>",
+            canonical,
         ),
         "web/src/app/App.tsx APP_VERSION": _version_from_regex(
             root / "web" / "src" / "app" / "App.tsx",
@@ -195,6 +196,21 @@ def _version_from_regex(path: Path, pattern: str) -> Version:
             f"expected exactly one version field in {path}, found {len(matches)}"
         )
     return Version.parse(matches[0])
+
+
+def _version_from_display_version(path: Path, canonical: Version) -> Version:
+    content = _read(path)
+    matches = re.findall(
+        r"<dt>版本</dt>\s*<dd>([^<]+)</dd>",
+        content,
+        re.MULTILINE,
+    )
+    if len(matches) != 1:
+        raise VersionSyncError(
+            f"expected exactly one version field in {path}, found {len(matches)}"
+        )
+    value = matches[0].strip()
+    return canonical if value == "{APP_VERSION}" else Version.parse(value)
 
 
 def _version_from_app(path: Path, canonical: Version) -> Version:
@@ -271,11 +287,6 @@ def update_version(root: Path, version: Version) -> None:
         root / "version_info.txt",
         r"StringStruct\('LegalCopyright',\s*'[^']+'\)",
         f"StringStruct('LegalCopyright', 'Copyright © SYNTEC {date.today().year}')",
-    )
-    _replace_once(
-        root / "web" / "src" / "app" / "App.tsx",
-        r"(<dt>版本</dt>\s*<dd>)[^<]+(</dd>)",
-        lambda match: f"{match.group(1)}{version_text}{match.group(2)}",
     )
     _replace_once(
         root / "web" / "src" / "app" / "App.tsx",

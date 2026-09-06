@@ -5,10 +5,10 @@ from devbase.api.schemas import (
     JobResponse,
     SnapshotResponse,
     StartJobRequest,
+    job_response,
     snapshot_response,
 )
 from devbase.application.job_runtime import JobRuntime
-from devbase.application.task import TaskNotFoundError
 
 router = APIRouter(
     prefix="/jobs",
@@ -35,26 +35,10 @@ def start_job(
     """
     request = body or StartJobRequest()
     job = runtime.start(request.kind, input=request.input)
-    return JobResponse(
-        id=job.job_id,
-        kind=job.kind,
-        status=job.status,
-        progress=job.progress,
-        message=job.message,
-        created_at=job.created_at,
-        updated_at=job.updated_at,
-    )
+    return job_response(job)  # type: ignore[return-value]
 
 
 @router.post("/cancel", response_model=JobResponse)
 def cancel_job(runtime: JobRuntime = Depends(get_runtime)) -> JobResponse:
     job = runtime.cancel_current()
-    return JobResponse(
-        id=job.job_id,
-        kind=job.kind,
-        status=job.status,
-        progress=job.progress,
-        message=job.message,
-        created_at=job.created_at,
-        updated_at=job.updated_at,
-    )
+    return job_response(job)  # type: ignore[return-value]
