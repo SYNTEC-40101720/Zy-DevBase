@@ -60,6 +60,20 @@ def test_packaging_precheck_passes() -> None:
     assert precheck.run_precheck(_ROOT) == []
 
 
+def test_packaging_precheck_checks_both_specs(tmp_path: Path) -> None:
+    (tmp_path / "devbase.spec").write_text(
+        'name="SYNTEC_DevBase", upx=False',
+        encoding="utf-8",
+    )
+    (tmp_path / "devbase_updater.spec").write_text(
+        'name="SYNTEC_DevBase-updater", upx=True',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(precheck.PrecheckError, match="devbase_updater.spec"):
+        precheck._check_spec(tmp_path)
+
+
 def test_zip_bundle_writes_archive_and_checksum(tmp_path: Path) -> None:
     bundle = tmp_path / "SYNTEC_DevBase"
     internal = bundle / "_internal"

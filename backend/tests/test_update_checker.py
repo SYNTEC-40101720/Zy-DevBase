@@ -41,7 +41,7 @@ def release_payload(
     *,
     name: str = "SYNTEC_DevBase-1.2.0.zip",
     url: str = "https://github.com/SYNTEC-40101720/Zy-DevBase/releases/download/v1.2.0/SYNTEC_DevBase-1.2.0.zip",
-    digest: str | None = None,
+    digest: str | None = "0" * 64,
     draft: bool = False,
     prerelease: bool = False,
 ) -> dict:
@@ -146,6 +146,17 @@ def test_wrong_download_host_is_rejected() -> None:
     assert "matching release asset" in result.error
 
 
+def test_missing_digest_is_rejected() -> None:
+    client = GitHubReleaseClient(
+        opener=opener_for(release_payload("v1.2.0", digest=None))
+    )
+
+    result = client.check("1.0.0")
+
+    assert result.installable is False
+    assert result.error == "release asset is missing SHA-256 digest"
+
+
 def test_download_streams_and_verifies_sha256(tmp_path: Path) -> None:
     body = b"zip-bytes"
     digest = hashlib.sha256(body).hexdigest()
@@ -200,6 +211,7 @@ def test_empty_download_rejected(tmp_path: Path) -> None:
                 "SYNTEC_DevBase-1.2.0.zip",
                 "https://github.com/SYNTEC-40101720/Zy-DevBase/releases/download/v1.2.0/SYNTEC_DevBase-1.2.0.zip",
                 0,
+                hashlib.sha256(b"").hexdigest(),
             ),
             tmp_path,
         )

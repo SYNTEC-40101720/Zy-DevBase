@@ -131,6 +131,8 @@ class GitHubReleaseClient:
     ) -> Path:
         destination_dir = Path(destination)
         destination_dir.mkdir(parents=True, exist_ok=True)
+        if asset.sha256 is None:
+            raise UpdateCheckError("release asset is missing SHA-256 digest")
         if asset.size < 0 or asset.size > self.config.max_download_bytes:
             raise UpdateCheckError("release asset exceeds configured size limit")
         request = Request(
@@ -217,6 +219,8 @@ class GitHubReleaseClient:
             if not download_url.startswith(self.config.download_prefix):
                 continue
             digest = _parse_digest(raw.get("digest"))
+            if digest is None:
+                raise UpdateCheckError("release asset is missing SHA-256 digest")
             size = raw.get("size", 0)
             if not isinstance(size, int):
                 raise UpdateCheckError("release asset size is invalid")

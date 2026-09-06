@@ -34,7 +34,7 @@ DevBase/
 
 | 层 | 职责 | 依赖 |
 | --- | --- | --- |
-| `domain` | 任务状态机、领域事件值对象、**端口契约**（`ProgressSink`/`DisplaySink`）、**资源提供者** | 无框架依赖 |
+| `domain` | 任务状态机、领域事件值对象、**端口契约**（`ProgressSink`）、**资源提供者** | 无框架依赖 |
 | `application` | 内存运行时、事件总线、窗口生命周期、**声明式工具清单**（`ToolRegistry`/`ToolDescriptor`） | 仅依赖 `domain` |
 | `api` | FastAPI 工厂、路由、Pydantic 契约 | 依赖 `application` |
 | `desktop` | pywebview 窗口、本地服务托管 | 依赖 `api` |
@@ -51,7 +51,8 @@ DevBase/
 
 ### 后端
 
-需要 Python 3.12。PowerShell 从模板根目录执行：
+需要 Python 3.12 或 3.13。SYNTEC 打包环境建议使用 Python 3.12。
+PowerShell 从模板根目录执行：
 
 ```powershell
 cd backend
@@ -75,6 +76,7 @@ python -m pip install -e ".[test]"
 cd web
 npm ci
 npm run typecheck
+npm test
 npm run build
 ```
 
@@ -146,8 +148,8 @@ Vite 开发服务器默认在 `http://localhost:5173`，会把 `/api` 和 WebSoc
 
 1. 替换 `domain/` 和 `application/` 里的业务逻辑（任务、事件、状态机）
 2. 在 `api/routes/` 增改路由，在 `api/schemas.py` 调整响应模型
-3. 在 `web/src/app/` 添加工具视图，在 `App.tsx` 导航列表注册
-4. 通过 `ToolRegistry` 注册任务，前端从 `/tools` 清单生成导航
+3. 通过 `ToolRegistry` 注册 `ToolDescriptor` 和任务，前端从 `/tools` 清单生成导航
+4. 在 `web/src/app/` 添加工具视图，并在 `App.tsx` 的工具选择分支接入视图
 5. 调 `main.py` 和 `desktop/launcher.py` 的窗口标题、尺寸
 6. 不动 `event_bus` / `desktop` 骨架，除非确有需要
 
