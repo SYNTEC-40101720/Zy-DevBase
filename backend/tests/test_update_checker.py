@@ -215,3 +215,33 @@ def test_empty_download_rejected(tmp_path: Path) -> None:
             ),
             tmp_path,
         )
+
+
+def test_update_config_default_timeout_is_60s() -> None:
+    assert UpdateConfig().timeout_seconds == 60.0
+
+
+def test_update_config_from_environment_overrides_timeout(monkeypatch) -> None:
+    monkeypatch.setenv("PLATFORM_UPDATE_TIMEOUT", "120")
+    assert UpdateConfig.from_environment().timeout_seconds == 120.0
+
+
+def test_update_config_from_environment_overrides_max_bytes(monkeypatch) -> None:
+    monkeypatch.setenv("PLATFORM_UPDATE_MAX_BYTES", str(10 * 1024 * 1024))
+    assert UpdateConfig.from_environment().max_download_bytes == 10 * 1024 * 1024
+
+
+def test_update_config_from_environment_falls_back_on_garbage(monkeypatch) -> None:
+    monkeypatch.setenv("PLATFORM_UPDATE_TIMEOUT", "garbage")
+    monkeypatch.setenv("PLATFORM_UPDATE_MAX_BYTES", "not-a-number")
+    config = UpdateConfig.from_environment()
+    assert config.timeout_seconds == 60.0
+    assert config.max_download_bytes == 512 * 1024 * 1024
+
+
+def test_update_config_from_environment_rejects_below_floor(monkeypatch) -> None:
+    monkeypatch.setenv("PLATFORM_UPDATE_TIMEOUT", "1")
+    monkeypatch.setenv("PLATFORM_UPDATE_MAX_BYTES", "1024")
+    config = UpdateConfig.from_environment()
+    assert config.timeout_seconds == 60.0
+    assert config.max_download_bytes == 512 * 1024 * 1024

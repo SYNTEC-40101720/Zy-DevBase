@@ -16,6 +16,7 @@ from devbase.application.errors import (
 from devbase.application.job_runtime import JobRuntime
 from devbase.application.lifecycle import LifecyclePolicy, WindowLifecycle
 from devbase.application.task import TaskNotFoundError
+from devbase.application.update_checker import GitHubReleaseClient, UpdateConfig
 from devbase.desktop.update_manager import UpdateManager
 from devbase import __version__
 
@@ -68,6 +69,7 @@ def create_app(
     )
     app.state.update_manager = update_manager or UpdateManager(
         __version__,
+        client=GitHubReleaseClient(config=UpdateConfig.from_environment()),
         install_dir=install_dir,
         update_root=os.getenv("PLATFORM_UPDATE_DIR"),
     )

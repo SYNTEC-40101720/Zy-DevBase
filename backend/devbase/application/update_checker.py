@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import tempfile
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 from urllib.error import URLError
@@ -35,13 +36,46 @@ class ReleaseVersion:
         return f"{self.major}.{self.minor}.{self.patch}"
 
 
+_MIN_TIMEOUT_SECONDS = 5.0
+_MIN_MAX_DOWNLOAD_BYTES = 1024 * 1024
+
+
 @dataclass(frozen=True, slots=True)
 class UpdateConfig:
     owner: str = "SYNTEC-40101720"
     repository: str = "Zy-DevBase"
     asset_prefix: str = "SYNTEC_DevBase-"
     max_download_bytes: int = 512 * 1024 * 1024
-    timeout_seconds: float = 15.0
+    timeout_seconds: float = 60.0
+
+    @classmethod
+    def from_environment(cls) -> "UpdateConfig":
+        """Build a config with defaults overridable by environment variables.
+
+        ``PLATFORM_UPDATE_TIMEOUT`` (seconds) and
+        ``PLATFORM_UPDATE_MAX_BYTES`` override the download socket timeout
+        and size cap. Unset, unparseable, or out-of-bounds values fall back
+        to the defaults rather than raising — a bad env var must not keep
+        the update service from starting.
+        """
+        overrides: dict[str, Any] = {}
+        timeout_raw = os.getenv("PLATFORM_UPDATE_TIMEOUT")
+        if timeout_raw is not None:
+            try:
+                timeout = float(timeout_raw)
+            except (TypeError, ValueError):
+                timeout = None
+            if timeout is not None and timeout >= _MIN_TIMEOUT_SECONDS:
+                overrides["timeout_seconds"] = timeout
+        max_bytes_raw = os.getenv("PLATFORM_UPDATE_MAX_BYTES")
+        if max_bytes_raw is not None:
+            try:
+                max_bytes = int(max_bytes_raw)
+            except (TypeError, ValueError):
+                max_bytes = None
+            if max_bytes is not None and max_bytes >= _MIN_MAX_DOWNLOAD_BYTES:
+                overrides["max_download_bytes"] = max_bytes
+        return replace(cls(), **overrides) if overrides else cls()
 
     @property
     def api_url(self) -> str:
