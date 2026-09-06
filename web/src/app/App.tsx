@@ -27,7 +27,7 @@ type View = "workbench" | "settings";
 const RAIL_WIDTH = 56;
 const MIN_WIDE = 232;
 const MAX_WIDE = 360;
-const APP_VERSION = import.meta.env.VITE_APP_VERSION || "0.3.6";
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || "0.3.7";
 
 function clamp(v: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, v));

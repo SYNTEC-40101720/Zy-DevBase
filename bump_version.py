@@ -201,16 +201,21 @@ def _version_from_regex(path: Path, pattern: str) -> Version:
 def _version_from_display_version(path: Path, canonical: Version) -> Version:
     content = _read(path)
     matches = re.findall(
-        r"<dt>版本</dt>\s*<dd>([^<]+)</dd>",
+        r"<dt>版本</dt>\s*<dd[^>]*>(.*?)</dd>",
         content,
-        re.MULTILINE,
+        re.DOTALL,
     )
     if len(matches) != 1:
         raise VersionSyncError(
             f"expected exactly one version field in {path}, found {len(matches)}"
         )
-    value = matches[0].strip()
-    return canonical if value in {"{APP_VERSION}", "{version}"} else Version.parse(value)
+    if matches[0].strip() in {"{APP_VERSION}", "{version}", "v{version}"}:
+        return canonical
+    # version-cell wrapper or dynamic expression
+    if "{version}" in matches[0] or "{APP_VERSION}" in matches[0]:
+        return canonical
+    literal = re.sub(r"<[^>]+>", "", matches[0]).strip()
+    return Version.parse(literal) if literal else canonical
 
 
 def _version_from_app(path: Path, canonical: Version) -> Version:
