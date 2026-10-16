@@ -41,12 +41,14 @@ GitHub 连接不稳定，而模板服务于轻量本地工具，因此取消完�
 
 本次修改仅作用于 Zy-DevBase 模板，不批量变更已派生的 Modbus 等应用。
 
-验收记录（2026-10-16）：后端 pytest 153 项通过（1 条第三方 Starlette 弃用警告）；前端 typecheck、Vitest 7 项和生产构建通过；版本一致性检查和打包预检通过。PR #12 合并后 GitHub Actions 的前端、Python 3.12/3.13、版本一致性全部通过；v0.3.8 打包及 Release 完成，资产与 GitHub SHA-256 一致。浏览器对新版本提示、离线提示、无需更新完成实操；冻结程序 API 版本与只读路由已验，模拟响应覆盖各提示状态。实际 WebView2 窗口关闭后的 exit 0 和端口释放尚未验收，不宣称通过。
+验收记录（2026-10-16）：后端 pytest 153 项通过（1 条第三方 Starlette 弃用警告）；前端 typecheck、Vitest 7 项和生产构建通过；版本一致性检查和打包预检通过。PR #12 合并后 GitHub Actions 的前端、Python 3.12/3.13、版本一致性全部通过；v0.3.8 打包及 Release 完成，资产与 GitHub SHA-256 一致。浏览器对新版本提示、离线提示、无需更新完成实操；冻结程序 API 版本与只读路由已验，模拟响应覆盖各提示状态。
+
+补充验收（2026-10-16 下午）：冻结程序桌面冒烟的退出项已完成——新增 `scripts/smoke_desktop_close.py`（启动冻结 exe → TCP 探活 → 向 WebView2 窗口发 WM_CLOSE → 验证 exit 0 / 端口释放 / 进程家族无残留），连续 3 次运行全部 PASS。说明：health 端点要求随机 local token，外部探活以 TCP 连通为就绪信号；本地重建的 zip 摘要与已传 GitHub 资产不同属打包不可复现（时间戳），重建源码与 v0.3.8 仅差未打包的测试文件，行为等价，未替换远端资产。另修复 CI 3.12 矩阵上实锤命中一次的 pipeline 测试竞态（tests/helpers.py 新增 wait_for_kind）。
 
 | 事项 | 状态 |
 | --- | --- |
 | NEW_PROJECT_SOP 补"清理演示内容"章节 | ✅ v0.3.7 后完成 |
 | CI workflow（pytest 矩阵 + 前端 + 版本一致性） | ✅ v0.3.7 后完成 |
-| 本地 release zip 清理（GitHub 资产已核验） | 待用户确认执行 |
+| 本地 release zip 与旧 updater 打包产物清理 | ✅ 2026-10-16 完成（v0.3.8 资产已在 GitHub 核验） |
 | 第一个真实派生项目 + SOP 回填 | ⬜ 下一步 |
 | 依赖升级评估（Vite 6 / React 19 / TS 5.7 有安全补丁时） | ⬜ 按需 |
