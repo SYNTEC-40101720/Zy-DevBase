@@ -58,7 +58,7 @@ class TaskContext:
         job_id: str,
         kind: str,
         cancel_event: threading.Event,
-        report: Callable[[float, str], None],
+        report: Callable[[float, str, dict[str, Any] | None], None],
     ) -> None:
         self.job_id = job_id
         self.kind = kind
@@ -68,8 +68,17 @@ class TaskContext:
     def is_cancelled(self) -> bool:
         return self._cancel_event.is_set()
 
-    def report_progress(self, progress: float, message: str = "") -> None:
-        self._report(progress, message)
+    def report_progress(
+        self,
+        progress: float,
+        message: str = "",
+        data: dict[str, Any] | None = None,
+    ) -> None:
+        """Report domain progress. ``data`` optionally carries structured
+        per-item detail (e.g. per-row results) that rides along the event
+        for consumers that need it; the runtime itself only stores progress
+        and message."""
+        self._report(progress, message, data)
 
 
 class TaskNotFoundError(KeyError):

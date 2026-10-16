@@ -1,6 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 
 from .job import JobStatus
 
@@ -34,6 +35,10 @@ class RuntimeEvent:
     progress: int
     message: str
     created_at: datetime
+    # Optional structured payload for domain-specific progress detail
+    # (e.g. per-row translation results). Runtime-agnostic: the core only
+    # carries it through; consumers opt in by reading it.
+    data: dict[str, Any] | None = field(default=None)
 
     @property
     def is_critical(self) -> bool:

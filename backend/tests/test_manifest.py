@@ -19,7 +19,7 @@ def _ctx() -> TaskContext:
         job_id="job-1",
         kind="demo",
         cancel_event=threading.Event(),
-        report=lambda _p, _m: None,
+        report=lambda _p, _m, _d: None,
     )
 
 

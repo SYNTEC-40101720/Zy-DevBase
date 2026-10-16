@@ -16,6 +16,8 @@ from devbase import __version__
 DirectoryPicker = Callable[[str], str | None]
 DirectoryOpener = Callable[[Path], None]
 PathChecker = Callable[[Path], bool]
+FilePicker = Callable[[str, tuple[tuple[str, str], ...]], str | None]
+SavePicker = Callable[[str, str], str | None]
 
 
 def _default_directory_picker(title: str) -> str | None:
@@ -26,6 +28,36 @@ def _default_directory_picker(title: str) -> str | None:
     root.withdraw()
     try:
         return filedialog.askdirectory(title=title) or None
+    finally:
+        root.destroy()
+
+
+def _default_file_picker(
+    title: str, patterns: tuple[tuple[str, str], ...]
+) -> str | None:
+    import tkinter as tk
+    from tkinter import filedialog
+
+    root = tk.Tk()
+    root.withdraw()
+    try:
+        return filedialog.askopenfilename(title=title, filetypes=list(patterns)) or None
+    finally:
+        root.destroy()
+
+
+def _default_save_picker(title: str, default_name: str) -> str | None:
+    import tkinter as tk
+    from tkinter import filedialog
+
+    root = tk.Tk()
+    root.withdraw()
+    try:
+        return filedialog.asksaveasfilename(
+            title=title,
+            initialfile=default_name,
+            confirmoverwrite=True,
+        ) or None
     finally:
         root.destroy()
 
@@ -45,15 +77,35 @@ class NativeBridge:
         *,
         directory_picker: DirectoryPicker | None = None,
         directory_opener: DirectoryOpener | None = None,
+        file_picker: FilePicker | None = None,
+        save_picker: SavePicker | None = None,
         platform_name: str | None = None,
     ) -> None:
         self._directory_picker = directory_picker or _default_directory_picker
         self._directory_opener = directory_opener or _default_directory_opener
+        self._file_picker = file_picker or _default_file_picker
+        self._save_picker = save_picker or _default_save_picker
         self._platform_name = platform_name or sys.platform
 
     def select_directory(self, title: str = "选择文件夹") -> str | None:
         """Open the native folder picker and return the selected path."""
         return self._directory_picker(title)
+
+    def select_file(
+        self,
+        title: str = "选择文件",
+        patterns: tuple[tuple[str, str], ...] = (("All files", "*.*"),),
+    ) -> str | None:
+        """Open the native file picker; ``patterns`` is (label, glob) pairs."""
+        return self._file_picker(title, patterns)
+
+    def save_file(
+        self,
+        title: str = "另存为",
+        default_name: str = "",
+    ) -> str | None:
+        """Open the native save dialog and return the chosen path."""
+        return self._save_picker(title, default_name)
 
     def open_directory(
         self,

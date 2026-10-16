@@ -218,6 +218,66 @@ def test_cancel_transitions_through_cancelling_to_cancelled() -> None:
 # Issue #4: pipeline 链式串联
 # ---------------------------------------------------------------------------
 
+class TestProgressData:
+    def test_report_progress_carries_structured_data(self) -> None:
+        """report_progress 的 data 参数应透传到 RuntimeEvent.data。"""
+        from devbase.application.manifest import ToolDescriptor, ToolRegistry
+
+        def task_with_data(ctx) -> dict:
+            ctx.report_progress(0.5, "half", data={"row": 7, "ok": True})
+            return {"message": "done"}
+
+        registry = ToolRegistry()
+        registry.register(
+            ToolDescriptor(
+                kind="data_task",
+                title="Data Task",
+                group="tool",
+                glyph="play",
+                task=task_with_data,
+            )
+        )
+        runtime = JobRuntime(registry=registry, total_steps=1, step_delay=0.005)
+        runtime.start("data_task")
+        wait_for_status(runtime, JobStatus.SUCCEEDED)
+
+        events = runtime.current_snapshot().events
+        progress_events = [e for e in events if e.kind is EventKind.PROGRESS]
+        assert len(progress_events) == 1
+        assert progress_events[0].data == {"row": 7, "ok": True}
+        # 终态事件不带 data
+        succeeded = [e for e in events if e.kind is EventKind.JOB_SUCCEEDED]
+        assert succeeded[0].data is None
+
+    def test_report_progress_without_data_keeps_none(self) -> None:
+        """不传 data 的进度事件保持 data=None，默认行为不变。"""
+        from devbase.application.manifest import ToolDescriptor, ToolRegistry
+
+        def plain_task(ctx) -> dict:
+            ctx.report_progress(1.0, "plain")
+            return {"message": "done"}
+
+        registry = ToolRegistry()
+        registry.register(
+            ToolDescriptor(
+                kind="plain_task",
+                title="Plain Task",
+                group="tool",
+                glyph="play",
+                task=plain_task,
+            )
+        )
+        runtime = JobRuntime(registry=registry, total_steps=1, step_delay=0.005)
+        runtime.start("plain_task")
+        wait_for_status(runtime, JobStatus.SUCCEEDED)
+
+        events = runtime.current_snapshot().events
+        progress_events = [e for e in events if e.kind is EventKind.PROGRESS]
+        assert progress_events[0].data is None
+
+
+# ---------------------------------------------------------------------------
+
 class TestPipelineChaining:
     def test_pipeline_auto_starts_next_kind(self) -> None:
         """pipeline 模式下，前一个 kind 成功后自动启动 next_kind。"""

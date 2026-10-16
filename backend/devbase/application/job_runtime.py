@@ -205,7 +205,7 @@ class JobRuntime:
                 )
                 cancel_event = job.cancellation_requested
 
-            def report(progress: float, message: str) -> None:
+            def report(progress: float, message: str, data: dict[str, Any] | None = None) -> None:
                 with self._lock:
                     job = self._get_active_locked(job_id)
                     if (
@@ -220,6 +220,7 @@ class JobRuntime:
                         kind=EventKind.PROGRESS,
                         progress=round(max(0.0, min(1.0, progress)) * 100),
                         message=message or job.message,
+                        data=data,
                     )
 
             ctx = TaskContext(
@@ -318,15 +319,22 @@ class JobRuntime:
         kind: EventKind,
         message: str,
         progress: int | None = None,
+        data: dict[str, Any] | None = None,
     ) -> None:
         job.status = status
         job.message = message
         if progress is not None:
             job.progress = progress
         job.updated_at = _utc_now()
-        self._emit_locked(job, kind)
+        self._emit_locked(job, kind, data=data)
 
-    def _emit_locked(self, job: _MutableJob, kind: EventKind) -> None:
+    def _emit_locked(
+        self,
+        job: _MutableJob,
+        kind: EventKind,
+        *,
+        data: dict[str, Any] | None = None,
+    ) -> None:
         self._event_bus.publish(
             RuntimeEvent(
                 sequence=0,
@@ -337,6 +345,7 @@ class JobRuntime:
                 progress=job.progress,
                 message=job.message,
                 created_at=job.updated_at,
+                data=data,
             )
         )
 
