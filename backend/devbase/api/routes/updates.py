@@ -1,16 +1,9 @@
-import os
-import subprocess
-import sys
+from fastapi import APIRouter, Depends, Request
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
-
+from devbase import __version__
 from devbase.api.dependencies import require_local_token
-from devbase.api.schemas import (
-    UpdateCheckResponse,
-    UpdateProgressResponse,
-    update_progress_response,
-)
-from devbase.desktop.update_manager import UpdateManager
+from devbase.api.schemas import UpdateCheckResponse
+from devbase.application.update_checker import GitHubReleaseClient
 
 router = APIRouter(
     prefix="/updates",
@@ -19,84 +12,14 @@ router = APIRouter(
 )
 
 
-def _manager(request: Request) -> UpdateManager:
-    return request.app.state.update_manager
-
-
 @router.get("/check", response_model=UpdateCheckResponse)
 def check_update(request: Request) -> UpdateCheckResponse:
-    result = _manager(request).check()
-    release = result.release
+    client: GitHubReleaseClient = request.app.state.update_client
+    result = client.check(__version__)
     return UpdateCheckResponse(
         current=str(result.current),
         latest=None if result.latest is None else str(result.latest),
         available=result.available,
-        installable=result.installable,
-        asset_name=None if release is None else release.asset.name,
-        release_url=None if release is None else release.html_url,
+        release_url=None if result.release is None else result.release.html_url,
         error=result.error,
     )
-
-
-@router.post("/apply", response_model=UpdateProgressResponse)
-def apply_update(request: Request) -> UpdateProgressResponse:
-    manager = _manager(request)
-    try:
-        manager.stage()
-    except (RuntimeError, OSError) as error:
-        raise HTTPException(status_code=409, detail=str(error)) from error
-    return update_progress_response(manager.progress())
-
-
-@router.post("/apply-and-restart", response_model=UpdateProgressResponse)
-def apply_and_restart(
-    request: Request,
-    background_tasks: BackgroundTasks,
-) -> UpdateProgressResponse:
-    manager = _manager(request)
-    shutdown = getattr(request.app.state, "request_shutdown", None)
-    if shutdown is None:
-        raise HTTPException(
-            status_code=409,
-            detail="apply-and-restart is available only in desktop mode",
-        )
-
-    try:
-        manager.stage()
-    except (RuntimeError, OSError) as error:
-        raise HTTPException(status_code=409, detail=str(error)) from error
-
-    try:
-        updater_executable, ready_file = manager.prepare_external_apply(os.getpid())
-    except (RuntimeError, OSError) as error:
-        manager.discard_staged_update()
-        raise HTTPException(status_code=409, detail=str(error)) from error
-
-    try:
-        subprocess.Popen(
-            [str(updater_executable), "--ready-file", str(ready_file)],
-            cwd=str(updater_executable.parent),
-            close_fds=True,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            creationflags=(
-                subprocess.DETACHED_PROCESS
-                if sys.platform == "win32"
-                else 0
-            ),
-        )
-    except RuntimeError as error:
-        manager.discard_staged_update()
-        raise HTTPException(status_code=409, detail=str(error)) from error
-    except OSError as error:
-        manager.discard_staged_update()
-        raise HTTPException(status_code=500, detail=f"failed to start updater: {error}") from error
-
-    background_tasks.add_task(shutdown)
-    return update_progress_response(manager.progress())
-
-
-@router.get("/progress", response_model=UpdateProgressResponse)
-def update_progress(request: Request) -> UpdateProgressResponse:
-    return update_progress_response(_manager(request).progress())

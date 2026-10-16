@@ -827,6 +827,12 @@ code {
   font-size: 12px;
 }
 
+.settings-card-body .update-banner {
+  position: static;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
 .update-banner-available {
   border-left-color: var(--blue);
 }

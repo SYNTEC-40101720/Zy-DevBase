@@ -5,7 +5,6 @@ import type {
   ToolDescriptor,
   ToolListResponse,
   UpdateCheckResponse,
-  UpdateProgressResponse,
 } from "./types";
 
 const API_PREFIX = "/api/v1";
@@ -97,18 +96,6 @@ export class ApiClient {
 
   async checkUpdate(signal?: AbortSignal): Promise<UpdateCheckResponse> {
     return this.request<UpdateCheckResponse>("/updates/check", { signal });
-  }
-
-  async applyUpdate(): Promise<UpdateProgressResponse> {
-    return this.request<UpdateProgressResponse>("/updates/apply", { method: "POST" });
-  }
-
-  async applyAndRestart(): Promise<UpdateProgressResponse> {
-    return this.request<UpdateProgressResponse>("/updates/apply-and-restart", { method: "POST" });
-  }
-
-  async updateProgress(signal?: AbortSignal): Promise<UpdateProgressResponse> {
-    return this.request<UpdateProgressResponse>("/updates/progress", { signal });
   }
 
   websocketUrl(after = 0): string {

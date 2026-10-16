@@ -29,6 +29,8 @@ git archive --format=tar HEAD | tar -x -C .
 
 仓名（`Zy-DevBase` → `Modbus`）按实际 GitHub 仓库定，通常与远程仓库名一致。
 
+更新默认仅手动检查并提示发布页，不继承完整自更新系统。派生后检查 `UpdateConfig.owner` / `repository` 指向新仓库；不增加下载器或 updater。网络超时只显示检查未完成，不影响本地业务。
+
 ## 2. 目录与文件重命名
 
 文本替换之外，还要重命名带 `devbase` 字样的目录和文件：
@@ -36,7 +38,6 @@ git archive --format=tar HEAD | tar -x -C .
 ```bash
 git mv backend/devbase backend/<新名小写>
 git mv devbase.spec <新名小写>.spec
-git mv devbase_updater.spec <新名小写>_updater.spec
 ```
 
 ## 3. 批量替换脚本
