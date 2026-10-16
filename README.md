@@ -145,7 +145,9 @@ Vite 开发服务器默认在 `http://localhost:5173`，会把 `/api` 和 WebSoc
 
 更新发布、替换和回滚步骤见 [`docs/UPDATE_SOP.md`](docs/UPDATE_SOP.md)。
 
-从本模板派生新项目（含改名）的完整步骤见 [`docs/NEW_PROJECT_SOP.md`](docs/NEW_PROJECT_SOP.md)。
+从本模板派生新项目（含改名）的完整步骤见 [`docs/NEW_PROJECT_SOP.md`](docs/NEW_PROJECT_SOP.md)。派生后请按该 SOP 第 5 节清理演示内容。
+
+模板能力的演进计划与"已评估暂不做"事项见 [`docs/ROADMAP.md`](docs/ROADMAP.md)。
 
 ## 扩展新工具
 

@@ -100,7 +100,65 @@ cd backend && python -c "import sys; sys.path.insert(0,'.'); import <新名小�
 - `git grep` 无输出。
 - pytest 全绿，**除 `test_packaging_precheck_passes` 外**——该测试要求 `web/dist/index.html` 存在（前端构建产物），模板默认不带 `dist/`。跑一次 `cd web && npm install && npm run build` 后即通过，与改名无关。
 
-## 5. 提交
+## 5. 清理演示内容
+
+模板自带的演示任务和演示面板只用于验证骨架契约，派生新项目时应替换为真实业务。**先改名再清理**（第 3、4 步之后做），避免两步改动混在一个提交里。
+
+清理分两个层次，按需选择：
+
+### 5.1 轻量清理（推荐默认：删前端演示面板，保留后端演示任务）
+
+后端 `demo_long_task` 是运行时契约的活测试样本（事件流、取消、状态机都靠它验证），留着无害且有用。前端 DemoPanel 是空态占位 UI，删掉后工作台回到干净空态。
+
+```bash
+# 1) 删除组件与样式
+rm web/src/components/DemoPanel.tsx
+# workbench.css：删除"演示面板"整段注释块（约 974–1276 行，从
+#   `/* ============================================================ * 演示面板 ...` 起，到 `.demo-empty-hint` 规则结束），
+#   以及第 75–78 行的 `/* DemoPanel 撑满空态 */ .workbench-empty:has(.demo-panel) {...}` 规则
+
+# 2) App.tsx 去掉引用
+#   删除: import { DemoPanel } from "../components/DemoPanel";
+#   删除: <DemoPanel ... /> 分支，空态回退改为统一的 empty-hero 提示
+```
+
+App.tsx 中 `selectedToolDescriptor ? ... : <DemoPanel/>` 的三元分支改成无条件渲染 empty-hero（或写项目自己的空态提示）。
+
+### 5.2 完整清理（删后端演示任务）
+
+真实工具注册后就不再需要演示任务，此时可以连后端一起删：
+
+```text
+backend/devbase/application/job_runtime.py
+  - demo_long_task() 函数（约 356 行起）
+  - _default_registry()（改为返回空 ToolRegistry 或项目自己的注册函数）
+  - start() 的 kind 默认值 "demo_long_task" 和 start_demo() 快捷方法
+backend/devbase/api/schemas.py
+  - StartJobRequest.kind 默认值 "demo_long_task"
+backend/devbase/api/routes/jobs.py
+  - start_job 文档字符串中的 demo_long_task 说明
+backend/devbase/domain/resources.py
+  - "demo.progress" / "demo.completed" / "demo.cancelled" 三条字符串
+web/src/api/client.ts
+  - startJob() 的 kind 默认参数 "demo_long_task"（改为必传）
+backend/tests/
+  - test_runtime.py / test_lifecycle.py / test_desktop_launcher.py 中
+    runtime.start_demo() 改为 start(自己的 kind)；test_api.py 中对
+    demo_long_task 的断言改为自己的工具；test_manifest.py 用例已是
+    独立 kind，不受影响
+```
+
+> 注意：`JobRuntime.__init__` 的 `total_steps` / `step_delay` 参数只为 demo 任务存在，完整清理后可以一并移除。
+
+### 5.3 清理后验证
+
+```bash
+git grep -n "demo" -- web/src backend/devbase   # 5.2 后应无输出；5.1 后仅剩后端演示任务
+cd backend && python -m pytest -q
+cd ../web && npm run typecheck && npm run build
+```
+
+## 6. 提交
 
 ```bash
 git add -A
@@ -109,7 +167,7 @@ git commit -m "refactor: 将 devbase 重命名为 <新名小写>"   # 若改名�
 git push origin main
 ```
 
-## 6. 常见坑
+## 7. 常见坑
 
 - **替换顺序**：必须先替换长串（`Zy-DevBase`、`SYNTEC_DevBase`）再替换短串（`devbase`），否则 `Zy-DevBase` 会被先拆成 `Zy-Modbus`。
 - **仓名 vs 包名**：`Zy-DevBase` 是 GitHub 仓名（→ `Modbus`），`devbase` 是 Python 包名（→ `modbus`），两者替换目标不同，不要混用。

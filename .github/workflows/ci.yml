@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  frontend:
+    name: 前端 typecheck + test + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      - run: npm run build
+
+      # 供 backend job 做打包预检（test_packaging_precheck_passes
+      # 要求 web/dist/index.html 存在）
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+          retention-days: 1
+
+  backend:
+    name: 后端 pytest (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    needs: frontend
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+
+      # 仅 [test]：test_desktop_launcher 用注入的 FakeWebview，
+      # 不需要真实 pywebview；桌面依赖留给 Windows 打包链路验证。
+      - run: python -m pip install -e ".[test]"
+
+      - run: python -m pytest -q
+
+  version:
+    name: 版本元数据一致性
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 校验 version.py / version_info.txt / package.json / App.tsx /
+      # pyproject.toml / spec 文件的版本号全部一致，防止漏改。
+      - run: python bump_version.py --check
