@@ -10,7 +10,7 @@ from devbase.application.lifecycle import (
 )
 from devbase.domain.events import EventKind, RuntimeEvent
 from devbase.domain.job import JobPhase, JobStatus, JobTrigger
-from helpers import wait_for_status
+from helpers import wait_for_kind, wait_for_status
 
 
 def test_demo_job_completes_and_keeps_lifecycle_events() -> None:
@@ -352,8 +352,8 @@ class TestPipelineChaining:
         runtime = JobRuntime(registry=registry, total_steps=2, step_delay=0.005)
 
         runtime.start("producer", input={"initial": "value"})
-        wait_for_status(runtime, JobStatus.SUCCEEDED)
-        wait_for_status(runtime, JobStatus.SUCCEEDED)
+        wait_for_kind(runtime, "consumer")
 
         # consumer should have been called
+        assert captured.get("job_kind") == "consumer"
         assert captured.get("job_kind") == "consumer"
