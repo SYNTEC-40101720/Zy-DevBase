@@ -52,3 +52,15 @@ GitHub 在本地网络中访问不稳定，小工具不应承担下载、安装�
 - 超时、无 Release、限流、非法 JSON 与 draft/prerelease 均返回未完成，不自动重试。
 - 设置页直接显示结果，检查中按钮禁用；提示链接不执行安装或重启。
 - 后端 OpenAPI 不再暴露更新写操作；打包编排只构建主程序。
+
+## 发布记录
+
+### v0.3.8（2026-10-16）
+
+- Release: [v0.3.8](https://github.com/SYNTEC-40101720/Zy-DevBase/releases/tag/v0.3.8)
+- 资产：`SYNTEC_DevBase-0.3.8.zip`（20,731,021 bytes）
+- SHA-256：`4cf317c68da0df284574baed6806d081425efef1a4598e8fbc5e82d228a95700`（本地 sidecar 与 GitHub digest 一致）
+- 改动：仅手动检查并打开 Release 页面；删除下载、stage、replace、rollback、restart 与独立 updater。
+- 验证：后端 153 passed（1 条 Starlette 弃用警告）；前端 typecheck、7 Vitest、Vite build 全绿；版本一致性与打包 precheck 全绿；GitHub Actions Python 3.12/3.13、前端、版本检查全绿；PyInstaller build 与 `postverify` 通过。
+- 打包行为冒烟：冻结程序以 browser/no-browser 模式启动，API 返回 v0.3.8，鉴权和只读路由正确；新版本链接、离线错误、无需更新三种 UI 状态及本地导航均通过，未见 JS 错误。模拟新版本/断网 API 响应使用本地拦截。
+- 限制：**实际 WebView2 桌面窗口关闭后 exit 0 / 端口释放的验收未通过，不能据此宣称干净退出已验证。** 本次关闭检查未能可靠操作/确认原生窗口；桌面应用生命周期本身未改。需在有交互式桌面的目标机补做人工关闭验收；这不影响本版下载提示功能及 CI 结果。
