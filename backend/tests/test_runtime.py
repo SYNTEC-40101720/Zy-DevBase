@@ -275,6 +275,31 @@ class TestProgressData:
         progress_events = [e for e in events if e.kind is EventKind.PROGRESS]
         assert progress_events[0].data is None
 
+    def test_task_context_receives_job_input(self) -> None:
+        from devbase.application.manifest import ToolDescriptor, ToolRegistry
+
+        captured: dict[str, object] = {}
+
+        def task(ctx) -> dict:
+            captured.update(ctx.input_data)
+            return {"message": "done"}
+
+        registry = ToolRegistry()
+        registry.register(
+            ToolDescriptor(
+                kind="input_task",
+                title="Input Task",
+                group="tool",
+                glyph="play",
+                task=task,
+            )
+        )
+        runtime = JobRuntime(registry=registry)
+        runtime.start("input_task", input={"rows": [2, 5], "target": 1})
+        wait_for_status(runtime, JobStatus.SUCCEEDED)
+
+        assert captured == {"rows": [2, 5], "target": 1}
+
 
 # ---------------------------------------------------------------------------
 

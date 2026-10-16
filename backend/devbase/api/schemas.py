@@ -84,6 +84,7 @@ class EventResponse(BaseModel):
     progress: int
     message: str
     created_at: datetime
+    data: dict[str, Any] | None = None
 
 
 class SnapshotResponse(BaseModel):
@@ -129,6 +130,7 @@ def event_response(event: RuntimeEvent) -> EventResponse:
         progress=event.progress,
         message=event.message,
         created_at=event.created_at,
+        data=event.data,
     )
 
 

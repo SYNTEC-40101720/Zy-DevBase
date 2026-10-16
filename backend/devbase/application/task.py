@@ -59,9 +59,11 @@ class TaskContext:
         kind: str,
         cancel_event: threading.Event,
         report: Callable[[float, str, dict[str, Any] | None], None],
+        input_data: dict[str, Any] | None = None,
     ) -> None:
         self.job_id = job_id
         self.kind = kind
+        self.input_data = input_data or {}
         self._cancel_event = cancel_event
         self._report = report
 

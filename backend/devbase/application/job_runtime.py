@@ -228,6 +228,7 @@ class JobRuntime:
                 kind=job.kind,
                 cancel_event=cancel_event,
                 report=report,
+                input_data=input,
             )
 
             result = task(ctx)  # type: ignore[operator]

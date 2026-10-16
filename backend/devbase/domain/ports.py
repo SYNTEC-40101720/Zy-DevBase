@@ -27,8 +27,13 @@ class ProgressSink(Protocol):
     it in; task bodies only call report_progress and is_cancelled.
     """
 
-    def report_progress(self, progress: float, message: str = "") -> None:
-        """Report progress in [0.0, 1.0] and an optional human message."""
+    def report_progress(
+        self,
+        progress: float,
+        message: str = "",
+        data: dict[str, object] | None = None,
+    ) -> None:
+        """Report progress and optional structured per-item data."""
         ...
 
     def is_cancelled(self) -> bool:

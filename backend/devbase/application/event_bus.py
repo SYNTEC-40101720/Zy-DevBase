@@ -36,6 +36,8 @@ class InMemoryEventBus:
                 and self._events
                 and self._events[-1].kind is EventKind.PROGRESS
                 and self._events[-1].job_id == committed.job_id
+                and self._events[-1].data is None
+                and committed.data is None
             ):
                 self._events[-1] = committed
             else:

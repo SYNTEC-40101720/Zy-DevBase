@@ -18,6 +18,7 @@ def _event(
     job_id: str = "job-1",
     progress: int = 0,
     event_id: str | None = None,
+    data: dict[str, object] | None = None,
 ) -> RuntimeEvent:
     return RuntimeEvent(
         sequence=0,
@@ -28,6 +29,7 @@ def _event(
         progress=progress,
         message=kind.value,
         created_at=datetime.now(timezone.utc),
+        data=data,
     )
 
 
@@ -65,6 +67,38 @@ class TestCoalescing:
         bus.publish(_event(EventKind.PROGRESS, job_id="job-b"))
         events = bus.snapshot().events
         assert len(events) == 2
+
+
+    def test_progress_events_with_data_are_not_coalesced(self) -> None:
+        bus = InMemoryEventBus()
+        bus.publish(
+            _event(
+                EventKind.PROGRESS,
+                progress=25,
+                data={"event": "row_ok", "row": 1},
+            )
+        )
+        bus.publish(
+            _event(
+                EventKind.PROGRESS,
+                progress=50,
+                data={"event": "row_ok", "row": 2},
+            )
+        )
+
+        events = bus.snapshot().events
+        assert len(events) == 2
+        assert events[0].data == {"event": "row_ok", "row": 1}
+        assert events[1].data == {"event": "row_ok", "row": 2}
+
+    def test_progress_events_without_data_still_coalesce(self) -> None:
+        bus = InMemoryEventBus()
+        bus.publish(_event(EventKind.PROGRESS, progress=25))
+        bus.publish(_event(EventKind.PROGRESS, progress=50))
+
+        events = bus.snapshot().events
+        assert len(events) == 1
+        assert events[0].progress == 50
 
 
 class TestBoundedHistory:
