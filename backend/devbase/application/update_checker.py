@@ -1,15 +1,13 @@
-"""GitHub Release discovery and verified asset download."""
+"""Optional, read-only discovery of the latest stable GitHub Release."""
 
 from __future__ import annotations
 
-import hashlib
 import json
+import math
 import os
 import re
-import tempfile
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from dataclasses import dataclass, replace
-from pathlib import Path
 from typing import Any
 from urllib.error import URLError
 from urllib.request import Request, urlopen
@@ -36,62 +34,31 @@ class ReleaseVersion:
         return f"{self.major}.{self.minor}.{self.patch}"
 
 
-_MIN_TIMEOUT_SECONDS = 5.0
-_MIN_MAX_DOWNLOAD_BYTES = 1024 * 1024
-
-
 @dataclass(frozen=True, slots=True)
 class UpdateConfig:
     owner: str = "SYNTEC-40101720"
     repository: str = "Zy-DevBase"
-    asset_prefix: str = "SYNTEC_DevBase-"
-    max_download_bytes: int = 512 * 1024 * 1024
-    timeout_seconds: float = 60.0
+    timeout_seconds: float = 5.0
 
     @classmethod
     def from_environment(cls) -> "UpdateConfig":
-        """Build a config with defaults overridable by environment variables.
-
-        ``PLATFORM_UPDATE_TIMEOUT`` (seconds) and
-        ``PLATFORM_UPDATE_MAX_BYTES`` override the download socket timeout
-        and size cap. Unset, unparseable, or out-of-bounds values fall back
-        to the defaults rather than raising — a bad env var must not keep
-        the update service from starting.
-        """
-        overrides: dict[str, Any] = {}
-        timeout_raw = os.getenv("PLATFORM_UPDATE_TIMEOUT")
-        if timeout_raw is not None:
-            try:
-                timeout = float(timeout_raw)
-            except (TypeError, ValueError):
-                timeout = None
-            if timeout is not None and timeout >= _MIN_TIMEOUT_SECONDS:
-                overrides["timeout_seconds"] = timeout
-        max_bytes_raw = os.getenv("PLATFORM_UPDATE_MAX_BYTES")
-        if max_bytes_raw is not None:
-            try:
-                max_bytes = int(max_bytes_raw)
-            except (TypeError, ValueError):
-                max_bytes = None
-            if max_bytes is not None and max_bytes >= _MIN_MAX_DOWNLOAD_BYTES:
-                overrides["max_download_bytes"] = max_bytes
-        return replace(cls(), **overrides) if overrides else cls()
+        """Accept a finite 1..30 second metadata request timeout."""
+        raw = os.getenv("PLATFORM_UPDATE_TIMEOUT")
+        try:
+            timeout = float(raw) if raw is not None else cls().timeout_seconds
+        except ValueError:
+            return cls()
+        if not math.isfinite(timeout) or not 1 <= timeout <= 30:
+            return cls()
+        return replace(cls(), timeout_seconds=timeout)
 
     @property
     def api_url(self) -> str:
         return f"https://api.github.com/repos/{self.owner}/{self.repository}/releases/latest"
 
     @property
-    def download_prefix(self) -> str:
-        return f"https://github.com/{self.owner}/{self.repository}/releases/download/"
-
-
-@dataclass(frozen=True, slots=True)
-class ReleaseAsset:
-    name: str
-    download_url: str
-    size: int
-    sha256: str | None = None
+    def release_prefix(self) -> str:
+        return f"https://github.com/{self.owner}/{self.repository}/releases/tag/"
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,7 +66,6 @@ class ReleaseInfo:
     tag_name: str
     version: ReleaseVersion
     html_url: str
-    asset: ReleaseAsset
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,7 +73,6 @@ class UpdateCheckResult:
     current: ReleaseVersion
     latest: ReleaseVersion | None
     available: bool
-    installable: bool
     release: ReleaseInfo | None = None
     error: str | None = None
 
@@ -116,7 +81,7 @@ Opener = Callable[..., Any]
 
 
 class GitHubReleaseClient:
-    """Query one configured stable Release and download its matching asset."""
+    """Check metadata on demand; never download, install, or retry."""
 
     def __init__(
         self,
@@ -132,91 +97,27 @@ class GitHubReleaseClient:
             current if isinstance(current, ReleaseVersion) else ReleaseVersion.parse(current)
         )
         try:
-            payload = self._fetch_release()
-            release = self._parse_release(payload)
-        except (OSError, URLError, TimeoutError, ValueError, TypeError, KeyError, UpdateCheckError) as error:
+            release = self._parse_release(self._fetch_release())
+        except (OSError, URLError, ValueError, TypeError, KeyError, UpdateCheckError) as error:
             return UpdateCheckResult(
                 current=current_version,
                 latest=None,
                 available=False,
-                installable=False,
-                error=str(error),
-            )
-        if release.version <= current_version:
-            return UpdateCheckResult(
-                current=current_version,
-                latest=release.version,
-                available=False,
-                installable=False,
-                release=release,
+                error=str(error) or "update check did not complete",
             )
         return UpdateCheckResult(
             current=current_version,
             latest=release.version,
-            available=True,
-            installable=True,
+            available=release.version > current_version,
             release=release,
         )
-
-    def download_asset(
-        self,
-        asset: ReleaseAsset,
-        destination: str | Path,
-    ) -> Path:
-        destination_dir = Path(destination)
-        destination_dir.mkdir(parents=True, exist_ok=True)
-        if asset.sha256 is None:
-            raise UpdateCheckError("release asset is missing SHA-256 digest")
-        if asset.size < 0 or asset.size > self.config.max_download_bytes:
-            raise UpdateCheckError("release asset exceeds configured size limit")
-        request = Request(
-            asset.download_url,
-            headers={
-                "Accept": "application/octet-stream",
-                "User-Agent": "Zy-DevBase-updater",
-            },
-        )
-        target: Path | None = None
-        total = 0
-        digest = hashlib.sha256()
-        try:
-            with self._opener(request, timeout=self.config.timeout_seconds) as response:
-                content_length = response.headers.get("Content-Length")
-                if content_length is not None and int(content_length) > self.config.max_download_bytes:
-                    raise UpdateCheckError("release asset exceeds configured size limit")
-                with tempfile.NamedTemporaryFile(
-                    mode="wb",
-                    prefix="download-",
-                    suffix=".zip",
-                    dir=destination_dir,
-                    delete=False,
-                ) as output:
-                    target = Path(output.name)
-                    for chunk in _chunks(response):
-                        total += len(chunk)
-                        if total > self.config.max_download_bytes:
-                            raise UpdateCheckError("release asset exceeds configured size limit")
-                        digest.update(chunk)
-                        output.write(chunk)
-            if total == 0:
-                raise UpdateCheckError("release asset is empty")
-            actual = digest.hexdigest()
-            if asset.sha256 is not None and actual != asset.sha256:
-                raise UpdateCheckError(
-                    f"release SHA-256 mismatch: expected {asset.sha256}, got {actual}"
-                )
-            return target
-        except Exception:
-            if target is not None:
-                target.unlink(missing_ok=True)
-            raise
 
     def _fetch_release(self) -> dict[str, Any]:
         request = Request(
             self.config.api_url,
             headers={
                 "Accept": "application/vnd.github+json",
-                "User-Agent": "Zy-DevBase-updater",
+                "User-Agent": "Zy-DevBase-version-check",
             },
         )
         with self._opener(request, timeout=self.config.timeout_seconds) as response:
@@ -233,73 +134,15 @@ class GitHubReleaseClient:
         if not isinstance(tag_name, str) or not isinstance(html_url, str):
             raise UpdateCheckError("release is missing tag_name or html_url")
         version = ReleaseVersion.parse(tag_name)
-        assets = payload.get("assets")
-        if not isinstance(assets, list):
-            raise UpdateCheckError("release assets are missing")
-        asset = self._select_asset(assets, expected_version=version)
-        return ReleaseInfo(tag_name, version, html_url, asset)
-
-    def _select_asset(
-        self,
-        assets: list[Any],
-        *,
-        expected_version: ReleaseVersion | None = None,
-    ) -> ReleaseAsset:
-        candidates: list[ReleaseAsset] = []
-        for raw in assets:
-            if not isinstance(raw, dict):
-                continue
-            name = raw.get("name")
-            download_url = raw.get("browser_download_url")
-            if not isinstance(name, str) or not isinstance(download_url, str):
-                continue
-            if not name.startswith(self.config.asset_prefix) or not name.endswith(".zip"):
-                continue
-            if not download_url.startswith(self.config.download_prefix):
-                continue
-            if download_url.rsplit("/", 1)[-1] != name:
-                raise UpdateCheckError("release asset URL does not match asset name")
-            asset_version = ReleaseVersion.parse(
-                name[len(self.config.asset_prefix) : -len(".zip")]
-            )
-            if expected_version is not None and asset_version != expected_version:
-                raise UpdateCheckError("release asset version does not match release tag")
-            digest = _parse_digest(raw.get("digest"))
-            if digest is None:
-                raise UpdateCheckError("release asset is missing SHA-256 digest")
-            size = raw.get("size", 0)
-            if not isinstance(size, int):
-                raise UpdateCheckError("release asset size is invalid")
-            candidates.append(ReleaseAsset(name, download_url, size, digest))
-        if len(candidates) != 1:
-            raise UpdateCheckError(
-                f"expected one matching release asset, found {len(candidates)}"
-            )
-        return candidates[0]
-
-
-def _parse_digest(value: object) -> str | None:
-    if value is None:
-        return None
-    if not isinstance(value, str):
-        raise UpdateCheckError("release asset digest is invalid")
-    digest = value.removeprefix("sha256:").lower()
-    if re.fullmatch(r"[0-9a-f]{64}", digest) is None:
-        raise UpdateCheckError("release asset digest is not SHA-256")
-    return digest
-
-
-def _chunks(response: Any, chunk_size: int = 1024 * 1024) -> Iterator[bytes]:
-    while True:
-        chunk = response.read(chunk_size)
-        if not chunk:
-            return
-        yield chunk
+        if tag_name not in (str(version), f"v{version}"):
+            raise UpdateCheckError("release tag is not canonical")
+        if html_url != f"{self.config.release_prefix}{tag_name}":
+            raise UpdateCheckError("release URL must point to this repository's HTTPS release page")
+        return ReleaseInfo(tag_name, version, html_url)
 
 
 __all__ = [
     "GitHubReleaseClient",
-    "ReleaseAsset",
     "ReleaseInfo",
     "ReleaseVersion",
     "UpdateCheckError",

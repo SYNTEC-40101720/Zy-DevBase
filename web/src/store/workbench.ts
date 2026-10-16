@@ -6,6 +6,7 @@ import type {
   RuntimeEvent,
   ToolDescriptor,
   UpdateStatus,
+  UpdateCheckResponse,
 } from "../api/types";
 
 export interface WorkbenchState {
@@ -14,6 +15,7 @@ export interface WorkbenchState {
   connection: ConnectionStatus;
   bottomPanelOpen: boolean;
   updateStatus: UpdateStatus;
+  updateResult: UpdateCheckResponse | null;
   currentJob: JobResponse | null;
   events: RuntimeEvent[];
 }
@@ -28,6 +30,7 @@ const initialState: WorkbenchState = {
   connection: "idle",
   bottomPanelOpen: false,
   updateStatus: "idle",
+  updateResult: null,
   currentJob: null,
   events: [],
 };

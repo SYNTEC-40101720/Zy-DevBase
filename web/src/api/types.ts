@@ -78,28 +78,12 @@ export type UpdateStatus =
   | "checking"
   | "available"
   | "up_to_date"
-  | "downloading"
-  | "applying"
-  | "restarting"
-  | "succeeded"
-  | "rollback"
   | "error";
 
 export interface UpdateCheckResponse {
   current: string;
   latest: string | null;
   available: boolean;
-  installable: boolean;
-  asset_name: string | null;
   release_url: string | null;
   error: string | null;
-}
-
-export interface UpdateProgressResponse {
-  status: string;
-  percent: number;
-  message: string;
-  error: string | null;
-  rollback: boolean;
-  ready_file: string | null;
 }

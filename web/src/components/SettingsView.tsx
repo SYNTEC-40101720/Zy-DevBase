@@ -1,6 +1,7 @@
 import { ArrowLeft, LayoutGrid, Monitor, Moon, RefreshCw, Sun } from "lucide-react";
 
-import type { UpdateStatus } from "../api/types";
+import type { UpdateCheckResponse, UpdateStatus } from "../api/types";
+import { UpdateBanner } from "./UpdateBanner";
 
 export type ThemeMode = "system" | "light" | "dark";
 
@@ -14,6 +15,7 @@ interface SettingsViewProps {
   version: string;
   /** 更新检查状态,用于驱动版本行右侧按钮的态。 */
   updateStatus?: UpdateStatus;
+  updateResult?: UpdateCheckResponse | null;
   onCheckUpdate?: () => void;
   onBack: () => void;
 }
@@ -27,6 +29,7 @@ export function SettingsView({
   onWideWidthChange,
   version,
   updateStatus = "idle",
+  updateResult,
   onCheckUpdate,
   onBack,
 }: SettingsViewProps) {
@@ -144,6 +147,12 @@ export function SettingsView({
                   <dd>Python · FastAPI · React · Vite</dd>
                 </div>
               </dl>
+              <UpdateBanner
+                status={updateStatus}
+                version={updateResult?.latest}
+                releaseUrl={updateResult?.release_url}
+              />
+              <p>仅手动检查版本并提示，不自动下载或安装；离线也可正常使用。</p>
             </div>
           </section>
         </div>

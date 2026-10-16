@@ -60,18 +60,26 @@ def test_packaging_precheck_passes() -> None:
     assert precheck.run_precheck(_ROOT) == []
 
 
-def test_packaging_precheck_checks_both_specs(tmp_path: Path) -> None:
-    (tmp_path / "devbase.spec").write_text(
-        'name="SYNTEC_DevBase", upx=False',
-        encoding="utf-8",
-    )
-    (tmp_path / "devbase_updater.spec").write_text(
-        'name="SYNTEC_DevBase-updater", upx=True',
-        encoding="utf-8",
-    )
-
-    with pytest.raises(precheck.PrecheckError, match="devbase_updater.spec"):
+def test_packaging_precheck_checks_main_spec(tmp_path: Path) -> None:
+    spec = tmp_path / "devbase.spec"
+    spec.write_text('name="SYNTEC_DevBase", upx=True', encoding="utf-8")
+    with pytest.raises(precheck.PrecheckError, match="devbase.spec"):
         precheck._check_spec(tmp_path)
+    spec.write_text('name="SYNTEC_DevBase", upx=False', encoding="utf-8")
+    precheck._check_spec(tmp_path)
+
+
+def test_build_release_only_packages_main_application(monkeypatch, tmp_path: Path) -> None:
+    commands = []
+    monkeypatch.setattr(build_release, "run", lambda command, **kwargs: commands.append(command))
+    monkeypatch.setattr(build_release, "version_text", lambda: "1.2.3")
+    monkeypatch.setattr(build_release, "zip_bundle", lambda *args: ("archive", "checksum"))
+    assert build_release.build_release(tmp_path) == ("archive", "checksum")
+    assert len(commands) == 4  # frontend, precheck, main exe, postverify
+    assert commands[0][1:] == ["run", "build"]
+    assert commands[1][-1].endswith("precheck.py")
+    assert commands[2][1:4] == ["-m", "PyInstaller", "devbase.spec"]
+    assert not any("updater" in str(command) for command in commands)
 
 
 def test_zip_bundle_writes_archive_and_checksum(tmp_path: Path) -> None:

@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
-import shutil
 import subprocess
 import sys
 import zipfile
@@ -39,9 +38,9 @@ def zip_bundle(bundle_dir: Path, output_dir: Path, version: str) -> tuple[Path, 
 
 
 def build_release(output_dir: Path) -> tuple[Path, Path]:
-    run([sys.executable, str(ROOT_DIR / "scripts" / "precheck.py")])
     npm = "npm.cmd" if os.name == "nt" else "npm"
     run([npm, "run", "build"], cwd=ROOT_DIR / "web")
+    run([sys.executable, str(ROOT_DIR / "scripts" / "precheck.py")])
     run([
         sys.executable,
         "-m",
@@ -50,39 +49,13 @@ def build_release(output_dir: Path) -> tuple[Path, Path]:
         "--noconfirm",
         "--clean",
     ])
-    run([
-        sys.executable,
-        "-m",
-        "PyInstaller",
-        "devbase_updater.spec",
-        "--noconfirm",
-        "--clean",
-    ])
     bundle_dir = ROOT_DIR / "dist" / "SYNTEC_DevBase"
-    updater_bundle = ROOT_DIR / "dist" / "SYNTEC_DevBase-updater"
     run([
         sys.executable,
         str(ROOT_DIR / "scripts" / "postverify.py"),
         "--bundle-dir",
         str(bundle_dir),
     ])
-    run([
-        sys.executable,
-        str(ROOT_DIR / "scripts" / "postverify.py"),
-        "--bundle-dir",
-        str(updater_bundle),
-        "--executable-name",
-        "SYNTEC_DevBase-updater.exe",
-    ])
-    shutil.copy2(
-        updater_bundle / "SYNTEC_DevBase-updater.exe",
-        bundle_dir / "SYNTEC_DevBase-updater.exe",
-    )
-    shutil.copytree(
-        updater_bundle / "_internal",
-        bundle_dir / "_internal",
-        dirs_exist_ok=True,
-    )
     return zip_bundle(bundle_dir, output_dir, version_text())
 
 

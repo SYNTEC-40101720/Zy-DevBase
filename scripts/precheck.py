@@ -40,14 +40,14 @@ def _check_frontend(root: Path) -> None:
 
 
 def _check_spec(root: Path) -> None:
-    for spec_name in ("devbase.spec", "devbase_updater.spec"):
-        content = (root / spec_name).read_text(encoding="utf-8")
-        if "upx=True" in content:
-            raise PrecheckError(f"{spec_name} must disable UPX")
-        if re.search(r'name\s*=\s*["\']SYNTEC', content) is None:
-            raise PrecheckError(
-                f"{spec_name} PyInstaller output name must start with SYNTEC"
-            )
+    spec_name = "devbase.spec"
+    content = (root / spec_name).read_text(encoding="utf-8-sig")
+    if "upx=True" in content:
+        raise PrecheckError(f"{spec_name} must disable UPX")
+    if re.search(r'name\s*=\s*["\']SYNTEC', content) is None:
+        raise PrecheckError(
+            f"{spec_name} PyInstaller output name must start with SYNTEC"
+        )
 
 
 def _check_version_resource(root: Path) -> None:

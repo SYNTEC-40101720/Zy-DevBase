@@ -27,7 +27,7 @@ type View = "workbench" | "settings";
 const RAIL_WIDTH = 56;
 const MIN_WIDE = 232;
 const MAX_WIDE = 360;
-const APP_VERSION = import.meta.env.VITE_APP_VERSION || "0.3.7";
+const APP_VERSION = import.meta.env.VITE_APP_VERSION || "0.3.8";
 
 function clamp(v: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, v));
@@ -37,7 +37,7 @@ export default function App() {
   const [view, setView] = useState<View>("workbench");
   const [collapsed, setCollapsed] = useState(false);
   const [wideWidth, setWideWidth] = useState(264);
-  const { tools, selectedTool, connection, bottomPanelOpen, updateStatus, events } = useWorkbenchStore();
+  const { tools, selectedTool, connection, bottomPanelOpen, updateStatus, updateResult, events } = useWorkbenchStore();
   const selectedToolDescriptor = tools.find((tool) => tool.kind === selectedTool);
   const [theme, setTheme] = useState<ThemeMode>(() => {
     return (localStorage.getItem("theme") as ThemeMode) || "system";
@@ -126,26 +126,20 @@ export default function App() {
     workbenchStore.patch({ bottomPanelOpen: !bottomPanelOpen });
   };
   const checkForUpdate = () => {
+    if (workbenchStore.getSnapshot().updateStatus === "checking") return;
     if (!apiClient.hasToken) {
-      workbenchStore.patch({ updateStatus: "error" });
+      workbenchStore.patch({ updateStatus: "error", updateResult: null });
       return;
     }
-    workbenchStore.patch({ updateStatus: "checking" });
+    workbenchStore.patch({ updateStatus: "checking", updateResult: null });
     apiClient.checkUpdate()
       .then((result) => {
         workbenchStore.patch({
-          updateStatus: result.available ? "available" : "up_to_date",
+          updateStatus: result.error !== null ? "error" : result.available ? "available" : "up_to_date",
+          updateResult: result,
         });
       })
-      .catch(() => workbenchStore.patch({ updateStatus: "error" }));
-  };
-  const prepareUpdate = () => {
-    workbenchStore.patch({ updateStatus: "downloading" });
-    apiClient.applyAndRestart()
-      .then(() => {
-        workbenchStore.patch({ updateStatus: "restarting" });
-      })
-      .catch(() => workbenchStore.patch({ updateStatus: "error" }));
+      .catch(() => workbenchStore.patch({ updateStatus: "error", updateResult: null }));
   };
 
   return (
@@ -176,7 +170,8 @@ export default function App() {
           <div className="workbench workbench-empty">
             <UpdateBanner
               status={updateStatus}
-              onApply={prepareUpdate}
+              version={updateResult?.latest}
+              releaseUrl={updateResult?.release_url}
               onDismiss={() => workbenchStore.patch({ updateStatus: "idle" })}
             />
             {selectedToolDescriptor ? (
@@ -201,6 +196,7 @@ export default function App() {
             onWideWidthChange={setWideWidth}
             version={APP_VERSION}
             updateStatus={updateStatus}
+            updateResult={updateResult}
             onCheckUpdate={checkForUpdate}
             onBack={() => setView("workbench")}
           />

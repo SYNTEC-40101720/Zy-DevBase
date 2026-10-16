@@ -17,7 +17,6 @@ from devbase.application.job_runtime import JobRuntime
 from devbase.application.lifecycle import LifecyclePolicy, WindowLifecycle
 from devbase.application.task import TaskNotFoundError
 from devbase.application.update_checker import GitHubReleaseClient, UpdateConfig
-from devbase.desktop.update_manager import UpdateManager
 from devbase import __version__
 
 from .routes import events, jobs, system, tools, updates
@@ -30,7 +29,7 @@ def create_app(
     static_dir: str | Path | None = None,
     lifecycle_policy: LifecyclePolicy | None = None,
     allowed_origins: Iterable[str] | None = None,
-    update_manager: UpdateManager | None = None,
+    update_client: GitHubReleaseClient | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="DevBase",
@@ -61,17 +60,8 @@ def create_app(
         local_token if local_token is not None else secrets.token_urlsafe(32)
     )
     app.state.allowed_origins = frozenset(resolved_origins)
-    install_dir = Path(
-        os.getenv(
-            "PLATFORM_INSTALL_DIR",
-            str(Path(__file__).resolve().parents[3]),
-        )
-    )
-    app.state.update_manager = update_manager or UpdateManager(
-        __version__,
-        client=GitHubReleaseClient(config=UpdateConfig.from_environment()),
-        install_dir=install_dir,
-        update_root=os.getenv("PLATFORM_UPDATE_DIR"),
+    app.state.update_client = update_client or GitHubReleaseClient(
+        config=UpdateConfig.from_environment(),
     )
     app.state.window_lifecycle = WindowLifecycle(
         lifecycle_policy or LifecyclePolicy(),

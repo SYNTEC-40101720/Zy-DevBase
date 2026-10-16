@@ -134,16 +134,13 @@ Vite 开发服务器默认在 `http://localhost:5173`，会把 `/api` 和 WebSoc
 | POST | `/jobs/cancel` | 取消当前任务 |
 | WS | `/events` | 事件流（含重放，需 query token） |
 | GET | `/tools` | 已注册工具清单（需 `X-Local-Token`，供前端导航渲染） |
-| GET | `/updates/check` | 检查固定 GitHub Release（需 `X-Local-Token`） |
-| POST | `/updates/apply` | 下载、校验并生成 ready 更新协议（需 token） |
-| POST | `/updates/apply-and-restart` | 桌面模式下载、校验并启动独立 updater，随后重启应用（需 token） |
-| GET | `/updates/progress` | 查询更新进度（需 `X-Local-Token`） |
+| GET | `/updates/check` | 用户手动检查固定 GitHub Release，仅提示版本与发布页（需 `X-Local-Token`） |
 
 运行时只允许一个非终态任务。任务通过后台线程执行，支持完成、取消、冲突检测和失败状态。事件总线合并相邻的同任务进度事件，重放历史默认最多 512 个事件；重连时以当前任务快照为权威状态。
 
 `/tools` 返回 `ToolRegistry` 中所有 `ToolDescriptor`，前端可据此渲染导航栏。
 
-更新发布、替换和回滚步骤见 [`docs/UPDATE_SOP.md`](docs/UPDATE_SOP.md)。
+更新仅在设置页点击「检查更新」时访问 GitHub，不在启动时联网，不下载或安装。发现新版本显示发布页链接；断网/超时显示「检查未完成」，本地使用不受影响。人工下载、保留数据和升级步骤见 [`docs/UPDATE_SOP.md`](docs/UPDATE_SOP.md)。
 
 从本模板派生新项目（含改名）的完整步骤见 [`docs/NEW_PROJECT_SOP.md`](docs/NEW_PROJECT_SOP.md)。派生后请按该 SOP 第 5 节清理演示内容。
 
